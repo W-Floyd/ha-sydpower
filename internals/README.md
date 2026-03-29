@@ -55,7 +55,7 @@ You can find my [PulseView capture files here](https://github.com/Ylianst/ESP-FB
 
 It turns out the ARM Cortex chip talks to the ESP32 using standard 115200,N,8,1 serial settings and using standard "AT" commands. It seems like the ESP32 is loaded with a standard "proxy" firmware from Espressif and documentation of the AT commands is here: [Espressif AT Command Set](https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/Basic_AT_Commands.html)
 
-So, the ARM chip instructions the ESP32 to enable it's Bluetooth, command to WIFI, etc. over a standard serial port. In my case, my battery is in a reset loop, but here is the conversation between the ARM chip and the ESP32 on each reboot loop.
+So, the ARM chip instructions the ESP32 to enable it's Bluetooth, command to WIFI, etc. over a standard serial port. All the AT commands are in ASCII format and easy to read and understand. In my case, my battery is in a reset loop, but here is the conversation between the ARM chip and the ESP32 on each reboot loop. I added "ARM:" for commands sent by the ARM chip to the ESP32 and "ESP:" for data coming from the ESP32.
 
 ```
 ARM: AT+RST
