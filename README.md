@@ -271,6 +271,10 @@ If this integration works for you and want to remove your battery WIFI connectio
 
 One known issue is that when not associated to any WIFI, the power station will show up as it's own access point with the name "ESP_xxxxxx".
 
+## Battery Internals
+
+If you are interested how the battery works internally, I opened one up and [you can see here my research so far](https://github.com/Ylianst/ESP-FBot/tree/main/internals). Obviously, please don't open up your power station unless you know what you are doing, there is a lot of power and so, some danger involved.
+
 ### Extras
 
 - [M5 ATOM Extras](https://github.com/Ylianst/ESP-FBot/blob/main/docs/m5atom-extras.md) - If you are using the M5 ATOM Light as you ESP32 device, check this out.
