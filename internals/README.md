@@ -53,6 +53,38 @@ I put the motherboard back into the battery and used a [cheap 10$ USB logic anal
 
 You can find my [PulseView capture files here](https://github.com/Ylianst/ESP-FBot/tree/main/internals/pulseview). "Capture001" was my first succesful capture of both TX and RX pins at a sampling rate that is way too high since I did not know what I would except. D4 is from the ARM to the ESP32, and D5 are the responses from the ESP32.
 
-It turns out the ARM Cortex chip talks to the ESP32 using standard 115200,N,8,1 serial settings and using standard "AT" commands. It seems like the ESP32 is loaded with a standard "proxy" firmwarm from Espressif and documentation of the AT commands is here: [Espressif AT Command Set](https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/Basic_AT_Commands.html)
+It turns out the ARM Cortex chip talks to the ESP32 using standard 115200,N,8,1 serial settings and using standard "AT" commands. It seems like the ESP32 is loaded with a standard "proxy" firmware from Espressif and documentation of the AT commands is here: [Espressif AT Command Set](https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/Basic_AT_Commands.html)
 
-So, the ARM chip instructions the ESP32 to enable it's Bluetooth, command to WIFI, etc. over a standard serial port.
+So, the ARM chip instructions the ESP32 to enable it's Bluetooth, command to WIFI, etc. over a standard serial port. In my case, my battery is in a reset loop, but here is the conversation between the ARM chip and the ESP32 on each reboot loop.
+
+```
+ARM: AT+RST
+ESP: ready
+ARM: AT
+ESP: AT
+ESP: OK
+ARM: AT+BLEINIT=2
+ESP: AT+BLEINIT=2
+ESP: OK
+ARM: AT+SYSMSG=7
+ESP: AT+SYSMSG=7
+ESP: OK
+ARM: AT+CWRECONNCFG=10,0
+ESP: AT+CWRECONNCFG=10,0
+ESP: OK
+ARM: AT+BLEGATTSSRVCRE
+ESP: AT+BLEGATTSSRVCRE
+ESP: OK
+ARM: AT+BLEGATTSSRVSTART
+ESP: AT+BLEGATTSSRVSTART
+ESP: OK
+ARM: AT+BLEADDR?
+ESP: AT+BLEADDR?
+ESP: +BLEADDR:"a8:46:74:41:4c:42"
+ESP: OK
+ARM: AT+BLEADVDATAEX="POWER-7E83","7e83","99A84674414C4200",1
+ESP: AT+BLEADVDATAEX="POWER-7E83","7e83","99A84674414C4200",1
+ESP: OK
+```
+
+You notice that except for the initial reset command, the ESP32 will echo back the command it received from the ARM check and then respond to it. You can see a bunch of "BLE" (Bluetooth) messages to get Bluetooth started.
