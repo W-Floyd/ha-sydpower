@@ -89,4 +89,4 @@ ESP: AT+BLEADVDATAEX="POWER-7E83","7e83","99A84674414C4200",1
 ESP: OK
 ```
 
-You notice that except for the initial reset command, the ESP32 will echo back the command it received from the ARM check and then respond to it. You can see a bunch of "BLE" (Bluetooth) messages to get Bluetooth started.
+You notice that except for the initial reset command, the ESP32 will echo back the command it received from the ARM chip and then respond to it. You can see a bunch of "BLE" (Bluetooth) messages to get Bluetooth started.
