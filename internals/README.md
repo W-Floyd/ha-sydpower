@@ -14,21 +14,21 @@ I kept a small bag with all of the screws. Luckly it's very clear what goes wher
 
 There is while glue to make sure nothing gets disconnected during transport. You have to disconnect 3 white connectors and 1 power connection from the main board. Here is what it looks like:
 
-![AFERIY P310 Motherboard Image](https://raw.githubusercontent.com/Ylianst/ESP-FBot/refs/heads/main/internal/images/board-top.jpeg)
+![AFERIY P310 Motherboard Image](https://github.com/Ylianst/ESP-FBot/blob/main/internals/images/board-top.jpeg)
 
 At the bottom of the board, I see the following indication:
 
-![AFERIY P310 Board Indication](https://raw.githubusercontent.com/Ylianst/ESP-FBot/refs/heads/main/internal/images/board-top.jpeg)
+![AFERIY P310 Board Indication](https://github.com/Ylianst/ESP-FBot/blob/main/internals/images/board-top.jpeg)
 
 It says "SYD-N051-DC-V1.5" on the first line and "20230915" on the second line. You can immidiately see that this is a board from [Shenzhen SYD Network Technology Co. Ltd.](https://sydpower.com/) and on their web site there is a range of batteries that you can get and brand anyway you like. This is the original source of the battery with AFERIY and others re-branding it.
 
 It looks like the board is run by an ARM Cortex processor, but you can see that they took extra care to black out all of the chips so to make them more difficult to identify. Ont he top left you can see the typical ARM debug port with 4 connectors (3.3v, GND, SWCLK, SWDIO on the J13 connector).
 
-![AFERIY P310 Board Indication](https://raw.githubusercontent.com/Ylianst/ESP-FBot/refs/heads/main/internal/images/board-debug-port.jpeg)
+![AFERIY P310 Board Indication](https://github.com/Ylianst/ESP-FBot/blob/main/internals/images/board-debug-port.jpeg)
 
 On the top right of the motherboard is the ESP32 chip that does WIFI and Bluetooth. The 2.4Ghz antenna is the small wiggle in the black area.
 
-![AFERIY P310 ESP32](https://raw.githubusercontent.com/Ylianst/ESP-FBot/refs/heads/main/internal/images/board-esp32.jpeg)
+![AFERIY P310 ESP32](https://github.com/Ylianst/ESP-FBot/blob/main/internals/images/board-esp32.jpeg)
 
 This is a `ESP32-C3-MINI-1 M4N4`, you can find the [documentation for this chip here](https://documentation.espressif.com/esp32-c3-mini-1_datasheet_en.pdf). Going with a voltmeter and just testing the pins, I think this are the pin connections for the ESP32:
 
