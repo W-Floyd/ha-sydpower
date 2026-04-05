@@ -112,6 +112,7 @@ ESP: +BLEDISCONN:0,"f0:24:f9:bb:d3:ca"\r\n       <-- Bluetooth client disconnect
 
 So, we have our Bluetooth client connecting, setting the MTU which is the "Maximum Transfer Unit" which is the largest packet it will accept. Then, you get a block of 168 bytes of data and the client can write data and get an updated state of 168 bytes. The next step is to look into the binary writes and notifications. Here is a typical "Write" and the response.
 
+```
 ESP: +WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]\r\n   <-- Last 2 bytes are the CRC
 ARM: AT+BLEGATTSNTFY=0,1,6,168\r\n
 ESP: AT+BLEGATTSNTFY=0,1,6,168\r\n>
@@ -128,6 +129,7 @@ ARM: (Sends 168 bytes of data, last 2 bytes are the CRC)
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 00 00 00 00 00 8E B8 
 ESP: \r\nOK\r\n
+```
 
 You can calculate the CRC using the [this CRC online calculator](https://www.codertools.net/tools/crc.php), you need to set the input format to "HEX" and CRC to "CRC-16/MODBUS". Then, paste the entire data packet except the last 2 bytes and you should get the last 2 bytes calculated correctly.
 
