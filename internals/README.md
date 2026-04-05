@@ -112,28 +112,55 @@ ESP: \r\nOK\r\n
 ESP: +BLEDISCONN:0,"f0:24:f9:bb:d3:ca"\r\n       <-- Bluetooth client disconnects
 ```
 
-So, we have our Bluetooth client connecting, setting the MTU which is the "Maximum Transfer Unit" which is the largest packet it will accept. Then, you get a block of 168 bytes of data and the client can write data and get an updated state of 168 bytes. The next step is to look into the binary writes and notifications. Here is a typical "Write" and the response.
+So, we have our Bluetooth client connecting, setting the MTU which is the "Maximum Transfer Unit" which is the largest packet it will accept. Then, you get a block of 168 bytes of data and the client can write data and get an updated state of 168 bytes. The next step is to look into the binary writes and notifications. Here is a typical "WRITE" and the response.
 
 ```
-ESP: +WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]\r\n   <-- Last 2 bytes are the CRC
+ESP: +WRITE:0,1,5,,8,[11 03 00 00 00 50 66 47]\r\n   <-- Request settings registers. Last 2 bytes are the CRC
+
 ARM: AT+BLEGATTSNTFY=0,1,6,168\r\n
 ESP: AT+BLEGATTSNTFY=0,1,6,168\r\n>
 ARM: (Sends 168 bytes of data, last 2 bytes are the CRC)
-04 00 00 00 50 00 00 00 00 00 02 00 00 00 00 00 
+11 03 00 00 00 50 00 00 00 00 00 FF FF FF 00 00 
+00 01 00 00 00 00 00 00 00 00 00 00 06 00 00 09 
+00 02 05 DC 00 00 07 D0 00 14 00 73 06 40 00 14 
+03 00 00 E9 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 01 19 01 0A 02 03 00 00 00 00 00 00 00 00 
+00 03 00 00 00 00 02 50 0F 04 00 00 00 00 00 00 
+00 00 00 00 00 26 00 18 00 1B 00 24 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 03 01 E0 
+01 E0 01 2C 00 00 00 00 00 00 00 00 03 E8 00 05 
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 AE 02 58 00 00 00 
-09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 30 00 40 00 00 00 00 00 00 00 00 00 00 
-00 03 14 00 00 03 A5 00 00 00 00 AB F1 00 00 00 
-00 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
-00 00 00 00 00 8E B8 
+00 00 00 00 00 00 CD 09
 ESP: \r\nOK\r\n
 ```
 
-You can calculate the CRC using the [this CRC online calculator](https://www.codertools.net/tools/crc.php), you need to set the input format to "HEX" and CRC to "CRC-16/MODBUS". Then, paste the entire data packet except the last 2 bytes and you should get the last 2 bytes calculated correctly.
+Above is a typical set of register values for the settings values. Below are typical values for the input registers:
+
+```
+ESP: +WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]\r\n   <-- Request input registers. Last 2 bytes are the CRC
+
+ARM: AT+BLEGATTSNTFY=0,1,6,168\r\n
+ESP: AT+BLEGATTSNTFY=0,1,6,168\r\n>
+ARM: (Sends 168 bytes of data, last 2 bytes are the CRC)
+11 04 00 00 00 50 00 00 00 00 00 02 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 02 58 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 30 00 40 00 00 00 00 00 00 00 00 00 
+00 00 03 14 00 00 03 A5 00 00 00 00 AB F1 00 00 
+00 00 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00 00 00 00 00 00 98 33
+
+The "WRITE" command is generally used in 3 ways:
+
+- Read the input registers. The command is "+WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]". This will read the 80 read-only registers with all of the various state of the power station.
+- Read the settings registers. The command is "+WRITE:0,1,5,,8,[11 03 00 00 00 50 66 47]". This will read the 80 read/write settings or holding registers.
+- Write to a settings register. For example "+WRITE:0,1,5,,8,[11 06 00 39 00 01 97 9A]". This command will write into register 57 (0x39) the value 1.
+
+You can see that the write command is the same except for the binary part that starts with 0x11 then the command (3, 4 or 6), data and the last 2 bytes are the CRC. You can calculate the CRC using the [this CRC online calculator](https://www.codertools.net/tools/crc.php), you need to set the input format to "HEX" and CRC to "CRC-16/MODBUS". Then, paste the entire data packet except the last 2 bytes and you should get the last 2 bytes calculated correctly.
 
 ## Binary Protocol
 
