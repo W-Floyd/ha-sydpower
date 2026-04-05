@@ -313,7 +313,7 @@ for each byte in data:
 
 The resulting 2-byte CRC is appended big-endian (high byte first) to the command. You can verify checksums using the [CRC online calculator](https://www.codertools.net/tools/crc.php) by setting the input format to "HEX" and CRC to "CRC-16/MODBUS".
 
-### Worked Example
+### Working Example
 
 Here is a complete example of a status read from the earlier hex capture:
 
