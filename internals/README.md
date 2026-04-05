@@ -115,7 +115,7 @@ So, we have our Bluetooth client connecting, setting the MTU which is the "Maxim
 ESP: +WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]\r\n   <-- Last 2 bytes are the CRC
 ARM: AT+BLEGATTSNTFY=0,1,6,168\r\n
 ESP: AT+BLEGATTSNTFY=0,1,6,168\r\n>
-ARM: (Sends 168 bytes of data, last 2 bytes is the CRC)
+ARM: (Sends 168 bytes of data, last 2 bytes are the CRC)
 04 00 00 00 50 00 00 00 00 00 02 00 00 00 00 00 
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 00 00 00 00 00 00 00 00 00 00 AE 02 58 00 00 00 
