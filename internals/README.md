@@ -157,9 +157,9 @@ ARM: (Sends 168 bytes of data, last 2 bytes are the CRC)
 
 The "WRITE" command is generally used in 3 ways:
 
-- Read the input registers. The command is "+WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]". This will read the 80 read-only registers with all of the various state of the power station.
-- Read the settings registers. The command is "+WRITE:0,1,5,,8,[11 03 00 00 00 50 66 47]". This will read the 80 read/write settings or holding registers.
-- Write to a settings register. For example "+WRITE:0,1,5,,8,[11 06 00 39 00 01 97 9A]". This command will write into register 57 (0x39) the value 1.
+- Read the input registers. The command is `+WRITE:0,1,5,,8,[11 04 00 00 00 50 A6 F2]`. This will read the 80 read-only registers with all of the various state of the power station.
+- Read the settings registers. The command is `+WRITE:0,1,5,,8,[11 03 00 00 00 50 66 47]`. This will read the 80 read/write settings or holding registers.
+- Write to a settings register. For example `+WRITE:0,1,5,,8,[11 06 00 39 00 01 97 9A]`. This command will write into register 57 (0x39) the value 1.
 
 You can see that the write command is the same except for the binary part that starts with 0x11 then the command (3, 4 or 6), data and the last 2 bytes are the CRC. You can calculate the CRC using the [this CRC online calculator](https://www.codertools.net/tools/crc.php), you need to set the input format to "HEX" and CRC to "CRC-16/MODBUS". Then, paste the entire data packet except the last 2 bytes and you should get the last 2 bytes calculated correctly.
 
