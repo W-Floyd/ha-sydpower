@@ -153,6 +153,7 @@ ARM: (Sends 168 bytes of data, last 2 bytes are the CRC)
 00 00 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 
 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 00 00 00 00 00 00 98 33
+ESP: \r\nOK\r\n
 ```
 
 The "WRITE" command is generally used in 3 ways:
@@ -162,6 +163,17 @@ The "WRITE" command is generally used in 3 ways:
 - Write to a settings register. For example `+WRITE:0,1,5,,8,[11 06 00 39 00 01 97 9A]`. This command will write into register 57 (0x39) the value 1.
 
 You can see that the write command is the same except for the binary part that starts with 0x11 then the command (3, 4 or 6), data and the last 2 bytes are the CRC. You can calculate the CRC using the [this CRC online calculator](https://www.codertools.net/tools/crc.php), you need to set the input format to "HEX" and CRC to "CRC-16/MODBUS". Then, paste the entire data packet except the last 2 bytes and you should get the last 2 bytes calculated correctly.
+
+```
++WRITE:0,1,5,,8,[11 06 00 39 00 01 97 9A]\r\n   <-- Write value 1 into settings register 57
+AT+BLEGATTSNTFY=0,1,6,8\r\n
+AT+BLEGATTSNTFY=0,1,6,8\r\n>
+ARM: (Sends 8 bytes of data, last 2 bytes are the CRC)
+11 06 00 39 00 01 97 9A
+ESP: \r\nOK\r\n
+```
+
+Now that we saw how the WRITE command is used, we can looks at the details of the binary protocol. After this point, we will omit the "AT" command and just assume binary is going and from the ARM chip.
 
 ## Binary Protocol
 
