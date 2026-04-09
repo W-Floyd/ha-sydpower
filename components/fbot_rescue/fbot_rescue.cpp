@@ -12,20 +12,18 @@ static const char *const TAG = "fbot_rescue";
 static const char *const SERVICE_UUID = "0000a002-0000-1000-8000-00805f9b34fb";
 static const char *const WRITE_CHAR_UUID = "0000c304-0000-1000-8000-00805f9b34fb";
 
-// Targeted handles: most probable positions for the custom write characteristic
-// value handle in an ESP-AT GATT server. We keep this small (~8 handles) so
-// every write actually reaches the BLE controller and goes over the air,
-// instead of being dropped due to L2CAP buffer overflow.
-//
-// ESP-AT GATT table layout variants:
-//   Minimal (GAP+GATT+custom):  custom char value at 0x000C
-//   With Device Info service:    custom char value at 0x0014-0x001A
-//   With extra services:         custom char value at 0x0028-0x0032
+// Targeted handles: every sequential handle in the range where the custom
+// write characteristic value is most likely located. We cover 0x0002-0x0030
+// (47 handles) to account for all possible GAP/GATT/custom service layouts
+// in ESP-AT firmware. This is small enough to avoid L2CAP buffer overflow
+// while covering both odd and even handle positions.
 const uint16_t FbotRescue::TARGET_HANDLES[] = {
-  0x000C, 0x000E, 0x0010, 0x0012,  // Minimal layout candidates
-  0x0016, 0x0018, 0x001A, 0x001C,  // Medium layout candidates
-  0x0020, 0x0022, 0x0024, 0x0026,  // Extended layout candidates
-  0x002A, 0x002C, 0x002E, 0x0030,  // Large layout candidates
+  0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009,
+  0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x0010, 0x0011,
+  0x0012, 0x0013, 0x0014, 0x0015, 0x0016, 0x0017, 0x0018, 0x0019,
+  0x001A, 0x001B, 0x001C, 0x001D, 0x001E, 0x001F, 0x0020, 0x0021,
+  0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027, 0x0028, 0x0029,
+  0x002A, 0x002B, 0x002C, 0x002D, 0x002E, 0x002F, 0x0030,
 };
 const size_t FbotRescue::TARGET_HANDLES_COUNT = sizeof(TARGET_HANDLES) / sizeof(TARGET_HANDLES[0]);
 
