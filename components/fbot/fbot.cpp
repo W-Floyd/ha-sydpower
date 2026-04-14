@@ -107,6 +107,8 @@ void Fbot::gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_i
       ESP_LOGW(TAG, "Disconnected from Fbot");
       this->connected_ = false;
       this->characteristics_discovered_ = false;
+      this->node_state = esp32_ble_tracker::ClientState::IDLE;
+      this->reset_sensors_to_unknown();
       this->update_connected_state(false);
       break;
     }
@@ -769,9 +771,8 @@ void Fbot::check_poll_timeout() {
       
       // Check if we've reached the maximum failures
       if (this->consecutive_poll_failures_ >= this->max_poll_failures_) {
-        ESP_LOGE(TAG, "Max poll failures reached - marking as disconnected and resetting sensors");
-        this->reset_sensors_to_unknown();
-        this->update_connected_state(false);
+        ESP_LOGE(TAG, "Max poll failures reached - closing BLE connection to trigger reconnect");
+        esp_ble_gattc_close(this->parent()->get_gattc_if(), this->parent()->get_conn_id());
       }
     }
   }
