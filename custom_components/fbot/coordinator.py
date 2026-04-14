@@ -365,13 +365,19 @@ class FbotCoordinator(DataUpdateCoordinator[dict]):
 
     def _start_polls(self) -> None:
         self._cancel_input_poll = async_track_time_interval(
-            self.hass, lambda _: self.hass.async_create_task(self._send_input_request()),
-            _POLLING_INTERVAL,
+            self.hass, self._schedule_input_poll, _POLLING_INTERVAL,
         )
         self._cancel_holding_poll = async_track_time_interval(
-            self.hass, lambda _: self.hass.async_create_task(self._send_holding_request()),
-            _SETTINGS_INTERVAL,
+            self.hass, self._schedule_holding_poll, _SETTINGS_INTERVAL,
         )
+
+    @callback
+    def _schedule_input_poll(self, _now=None) -> None:
+        self.hass.async_create_task(self._send_input_request())
+
+    @callback
+    def _schedule_holding_poll(self, _now=None) -> None:
+        self.hass.async_create_task(self._send_holding_request())
 
     def _stop_polls(self) -> None:
         if self._cancel_input_poll:
