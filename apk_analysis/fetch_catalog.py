@@ -241,11 +241,12 @@ def build_catalog(raw: dict) -> dict:
 
 # ── main ───────────────────────────────────────────────────────────────────────
 
+
 def _collect_service_uuids(catalog: dict) -> list[dict]:
     """
     Build the list of bluetooth matchers for manifest.json.
 
-    Each entry is ``{"service_uuid": "<UUID>"}`` for every unique service UUID
+    Each entry is ``{"service_uuid": "<UUID>", "connectable": true}`` for every unique service UUID
     found in product keys (format ``"<SERVICE_UUID>_<DEVICE_NAME>"``).
     """
     uuids: set[str] = set()
@@ -253,15 +254,20 @@ def _collect_service_uuids(catalog: dict) -> list[dict]:
         parts = key.split("_", 1)
         if len(parts) == 2:
             uuids.add(parts[0])
-    return [{"service_uuid": uuid} for uuid in sorted(uuids)]
+    return [{"service_uuid": uuid, "connectable": True} for uuid in sorted(uuids)]
 
 
 def _update_ha_manifest(bluetooth_matchers: list[dict]) -> None:
     """Rewrite the HA manifest with current bluetooth service UUID matchers."""
     manifest = json.loads(HA_MANIFEST_PATH.read_text())
+    # Ensure each matcher has connectable: true
+    for matcher in bluetooth_matchers:
+        matcher["connectable"] = True
     manifest["bluetooth"] = bluetooth_matchers
     HA_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2) + "\n")
-    print(f"  Updated {HA_MANIFEST_PATH} ({len(bluetooth_matchers)} bluetooth matchers)")
+    print(
+        f"  Updated {HA_MANIFEST_PATH} ({len(bluetooth_matchers)} bluetooth matchers)"
+    )
 
 
 if __name__ == "__main__":
@@ -282,4 +288,6 @@ if __name__ == "__main__":
         bluetooth_matchers = _collect_service_uuids(catalog)
         _update_ha_manifest(bluetooth_matchers)
     else:
-        print(f"Skipping HA integration copy (directory not found: {HA_CATALOG_PATH.parent})")
+        print(
+            f"Skipping HA integration copy (directory not found: {HA_CATALOG_PATH.parent})"
+        )
