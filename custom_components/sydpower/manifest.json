@@ -618,5 +618,5 @@
     "bleak-retry-connector>=3.6.0",
     "sydpower @ https://test-files.pythonhosted.org/packages/91/e8/c3113e46e6fd02d177ac8ff40b5a6733e1db4e8874041021d5c9a35ce80d/sydpower-0.3.3-py3-none-any.whl#sha256=9810bebb349aeb2117545eef8cde79ca44b2fcfd73e3c8c5b41ae1b9a69663fa"
   ],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
