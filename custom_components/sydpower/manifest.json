@@ -3,457 +3,608 @@
   "name": "Sydpower BLE Inverter",
   "bluetooth": [
     {
-      "service_uuid": "00000101-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000101-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000102-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000102-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000104-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000104-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000011C-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000011C-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000014E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000014E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000017E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000017E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000017F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000017F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000181-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000181-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000204-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000204-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000281-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000281-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000031D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000031D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000034F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000034F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "000003B3-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "000003B3-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000403-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000403-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000405-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000405-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000480-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000480-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000482-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000482-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000604-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000604-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000681-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000681-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000701-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000701-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000077E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000077E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000A04-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000A04-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000A1C-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000A1C-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000A4E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000A4E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00000A81-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00000A81-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004100-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004100-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004101-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004101-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004102-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004102-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004104-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004104-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004119-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004119-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004132-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004132-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000417D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000417D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000417E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000417E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000417F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000417F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004181-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004181-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004201-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004201-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000427E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000427E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004300-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004300-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004303-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004303-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004305-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004305-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000437D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000437D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004380-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004380-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004382-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004382-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000439B-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000439B-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004400-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004400-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004435-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004435-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "000044B2-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "000044B2-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004501-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004501-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000457E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000457E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004600-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004600-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004601-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004601-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004602-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004602-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004604-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004604-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000467D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000467D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000467E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000467E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000467F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000467F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004681-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004681-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004702-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004702-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000477F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000477F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004801-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004801-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000487E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000487E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004A01-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004A01-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004A06-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004A06-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004A7E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004A7E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004A83-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004A83-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004B02-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004B02-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004B7F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004B7F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004C02-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004C02-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004C7F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004C7F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004D01-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004D01-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004D7E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004D7E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004E00-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004E00-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00004E7D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00004E7D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008100-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008100-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008101-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008101-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008102-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008102-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008103-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008103-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008104-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008104-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008106-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008106-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000817D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000817D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000817E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000817E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000817F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000817F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008180-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008180-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008181-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008181-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008183-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008183-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008201-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008201-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008203-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008203-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008204-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008204-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000827E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000827E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008280-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008280-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008281-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008281-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008300-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008300-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008301-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008301-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000831C-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000831C-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000834E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000834E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000837E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000837E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "000083B2-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "000083B2-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008400-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008400-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008402-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008402-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008419-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008419-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008432-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008432-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000847D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000847D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000847F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000847F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008501-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008501-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008502-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008502-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008503-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008503-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000857E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000857E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000857F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000857F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008580-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008580-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008600-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008600-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008601-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008601-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008603-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008603-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008604-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008604-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000867D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000867D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000867E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000867E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008680-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008680-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008681-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008681-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008700-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008700-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008701-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008701-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008702-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008702-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000877D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000877D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000877E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000877E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000877F-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000877F-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008900-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008900-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000897D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000897D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008A01-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008A01-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008A7E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008A7E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008A82-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008A82-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008E00-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008E00-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008E01-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008E01-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008E04-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008E04-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008E7D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008E7D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008E7E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008E7E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "00008E81-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "00008E81-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C100-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C100-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C101-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C101-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C104-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C104-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C105-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C105-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C106-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C106-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C17D-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C17D-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C17E-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C17E-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C181-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C181-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C182-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C182-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C302-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C302-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C319-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C319-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C603-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C603-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C604-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C604-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C680-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C680-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000C681-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000C681-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000CD04-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000CD04-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     },
     {
-      "service_uuid": "0000CD81-0000-1000-8000-00805F9B34FB"
+      "service_uuid": "0000CD81-0000-1000-8000-00805F9B34FB",
+      "connectable": true
     }
   ],
   "codeowners": [],
