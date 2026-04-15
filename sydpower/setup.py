@@ -7,9 +7,9 @@ a setup.py. The build system is configured via pyproject.toml.
 
 from __future__ import annotations
 
-from setuptools import find_packages, setup
+from setuptools import setup
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 setup(
     name="sydpower",
@@ -35,7 +35,8 @@ setup(
         "Topic :: System :: Hardware :: Hardware Drivers",
     ],
     python_requires=">=3.9",
-    packages=find_packages(exclude=["tests", "tests.*"]),
+    packages=["sydpower"],
+    package_dir={"sydpower": "."},
     package_data={"sydpower": ["*.json"]},
     install_requires=[
         "bleak>=1.0.0",
