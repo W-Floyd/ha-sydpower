@@ -13,17 +13,9 @@ import pathlib
 from typing import Any
 
 _CATALOG_PATH = pathlib.Path(__file__).parent / "product_catalog.json"
-_cache: dict | None = None
-
-
-def _load() -> dict:
-    global _cache
-    if _cache is None:
-        if _CATALOG_PATH.exists():
-            _cache = json.loads(_CATALOG_PATH.read_text())
-        else:
-            _cache = {}
-    return _cache
+_catalog: dict = (
+    json.loads(_CATALOG_PATH.read_text()) if _CATALOG_PATH.exists() else {}
+)
 
 
 def get_product_features(product_key: str) -> dict[str, list[dict[str, Any]]]:
@@ -32,7 +24,7 @@ def get_product_features(product_key: str) -> dict[str, list[dict[str, Any]]]:
 
     Returns an empty dict when the catalog or product is not found.
     """
-    catalog = _load()
+    catalog = _catalog
     product = catalog.get("products", {}).get(product_key)
     if product is None:
         return {}
