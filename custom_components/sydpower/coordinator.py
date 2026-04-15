@@ -68,7 +68,7 @@ class SydpowerCoordinator(ActiveBluetoothDataUpdateCoordinator[SydpowerData]):
             mode=BluetoothScanningMode.ACTIVE,
             connectable=True,
         )
-        self.name = name
+        self._device_name = name
         self._modbus_address = modbus_address
         self._modbus_count = modbus_count
         self._protocol_version = protocol_version
@@ -97,7 +97,7 @@ class SydpowerCoordinator(ActiveBluetoothDataUpdateCoordinator[SydpowerData]):
         Called by the coordinator framework from a background task.
         """
         ble_device = service_info.device
-        _LOGGER.debug("Polling %s (%s)", self.name, ble_device.address)
+        _LOGGER.debug("Polling %s (%s)", self._device_name, ble_device.address)
 
         client = await establish_connection(
             BleakClientWithServiceCache,
@@ -151,7 +151,7 @@ class SydpowerCoordinator(ActiveBluetoothDataUpdateCoordinator[SydpowerData]):
             await asyncio.wait_for(asyncio.shield(future), timeout=5.0)
         except asyncio.TimeoutError as exc:
             raise CommandTimeoutError(
-                f"No response from {self.name} for FC 0x{func_code:02X}"
+                f"No response from {self._device_name} for FC 0x{func_code:02X}"
             ) from exc
         finally:
             try:
