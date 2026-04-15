@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from setuptools import find_packages, setup
 
-__version__ = "0.3.0"
+__version__ = "0.3.2"
 
 setup(
     name="sydpower",

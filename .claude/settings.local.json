@@ -13,7 +13,8 @@
       "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/bluetooth/passive_update_coordinator.py\")",
       "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/__init__.py\")",
       "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/sensor.py\")",
-      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/debounce.py\")"
+      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/debounce.py\")",
+      "WebFetch(domain:test.pypi.org)"
     ]
   }
 }
