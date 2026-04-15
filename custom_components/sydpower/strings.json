@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "bluetooth_confirm": {
+        "title": "Set up {name}",
+        "description": "Set up **{name}** ({address}) as a Sydpower BLE device."
+      },
+      "user": {
+        "title": "Set up Sydpower Device",
+        "description": "Select a nearby Sydpower device to add.",
+        "data": {
+          "address": "Device"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "no_devices_found": "No Sydpower devices found nearby. Make sure the device is powered on and in range.",
+      "advertising_state_error": "Device {address} is not advertising. Ensure it is powered on and in range, then try again."
+    }
+  }
+}

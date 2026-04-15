@@ -19,7 +19,10 @@ SPACE_ID = "mp-6c382a98-49b8-40ba-b761-645d83e8ee74"
 CLIENT_SECRET = "5rCEdl/nx7IgViBe4QYRiQ=="
 ENDPOINT = "https://api.next.bspapp.com/client"
 
-OUT_PATH = pathlib.Path(__file__).parent.parent / "sydpower" / "product_catalog.json"
+_REPO_ROOT = pathlib.Path(__file__).parent.parent
+OUT_PATH = _REPO_ROOT / "sydpower" / "product_catalog.json"
+HA_CATALOG_PATH = _REPO_ROOT / "custom_components" / "sydpower" / "product_catalog.json"
+HA_MANIFEST_PATH = _REPO_ROOT / "custom_components" / "sydpower" / "manifest.json"
 
 
 # ── uniCloud transport ─────────────────────────────────────────────────────────
@@ -238,6 +241,29 @@ def build_catalog(raw: dict) -> dict:
 
 # ── main ───────────────────────────────────────────────────────────────────────
 
+def _collect_service_uuids(catalog: dict) -> list[dict]:
+    """
+    Build the list of bluetooth matchers for manifest.json.
+
+    Each entry is ``{"service_uuid": "<UUID>"}`` for every unique service UUID
+    found in product keys (format ``"<SERVICE_UUID>_<DEVICE_NAME>"``).
+    """
+    uuids: set[str] = set()
+    for key in catalog.get("products", {}):
+        parts = key.split("_", 1)
+        if len(parts) == 2:
+            uuids.add(parts[0])
+    return [{"service_uuid": uuid} for uuid in sorted(uuids)]
+
+
+def _update_ha_manifest(bluetooth_matchers: list[dict]) -> None:
+    """Rewrite the HA manifest with current bluetooth service UUID matchers."""
+    manifest = json.loads(HA_MANIFEST_PATH.read_text())
+    manifest["bluetooth"] = bluetooth_matchers
+    HA_MANIFEST_PATH.write_text(json.dumps(manifest, indent=2) + "\n")
+    print(f"  Updated {HA_MANIFEST_PATH} ({len(bluetooth_matchers)} bluetooth matchers)")
+
+
 if __name__ == "__main__":
     raw = fetch()
     catalog = build_catalog(raw)
@@ -249,3 +275,11 @@ if __name__ == "__main__":
 
     OUT_PATH.write_text(json.dumps(catalog, indent=2) + "\n")
     print(f"\nWrote {OUT_PATH} ({OUT_PATH.stat().st_size:,} bytes)")
+
+    if HA_CATALOG_PATH.parent.exists():
+        HA_CATALOG_PATH.write_text(json.dumps(catalog, indent=2) + "\n")
+        print(f"Wrote {HA_CATALOG_PATH} ({HA_CATALOG_PATH.stat().st_size:,} bytes)")
+        bluetooth_matchers = _collect_service_uuids(catalog)
+        _update_ha_manifest(bluetooth_matchers)
+    else:
+        print(f"Skipping HA integration copy (directory not found: {HA_CATALOG_PATH.parent})")
