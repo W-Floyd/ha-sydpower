@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:developers.home-assistant.io)",
-      "WebFetch(domain:www.hacs.xyz)"
+      "WebFetch(domain:www.hacs.xyz)",
+      "Bash(curl -s https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/bluetooth/__init__.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/__init__.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/coordinator.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/config_flow.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/manifest.json)",
+      "Bash(curl -s https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/bluetooth/models.py)",
+      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/bluetooth/active_update_coordinator.py\")",
+      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/bluetooth/passive_update_coordinator.py\")",
+      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/__init__.py\")",
+      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/sensor.py\")",
+      "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/debounce.py\")"
     ]
   }
 }
