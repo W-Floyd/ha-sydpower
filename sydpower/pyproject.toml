@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sydpower"
-version = "0.3.2"
+version = "0.3.3"
 description = "Python library for Sydpower / BrightEMS BLE inverter devices"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -47,8 +47,11 @@ dev = [
     "ruff>=0.1.0",
 ]
 
-[tool.setuptools.packages.find]
-include = ["sydpower*"]
+[tool.setuptools]
+packages = ["sydpower"]
+
+[tool.setuptools.package-dir]
+"sydpower" = "."
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

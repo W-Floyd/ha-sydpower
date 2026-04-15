@@ -616,7 +616,7 @@
   "loggers": ["custom_components.sydpower"],
   "requirements": [
     "bleak-retry-connector>=3.6.0",
-    "sydpower @ https://test-files.pythonhosted.org/packages/6e/cf/966dab321dcb69b096013da8946c3e12b41adc4e7b04931b4d310e9da3bb/sydpower-0.3.2-py3-none-any.whl#sha256=e6b8073af8c70abbd7e0cc90c801e5973530555187f684bd24c5bcadff3594c9"
+    "sydpower @ https://test-files.pythonhosted.org/packages/91/e8/c3113e46e6fd02d177ac8ff40b5a6733e1db4e8874041021d5c9a35ce80d/sydpower-0.3.3-py3-none-any.whl#sha256=9810bebb349aeb2117545eef8cde79ca44b2fcfd73e3c8c5b41ae1b9a69663fa"
   ],
   "version": "0.1.0"
 }
