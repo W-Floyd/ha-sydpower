@@ -458,18 +458,14 @@
   ],
   "codeowners": [],
   "config_flow": true,
-  "dependencies": [
-    "bluetooth_adapters"
-  ],
+  "dependencies": ["bluetooth_adapters"],
   "documentation": "https://github.com/ESP-FBot",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "loggers": [
-    "custom_components.sydpower"
-  ],
+  "loggers": ["custom_components.sydpower"],
   "requirements": [
     "bleak-retry-connector>=3.6.0",
-    "sydpower>=0.1.0"
+    "sydpower==0.3.0 @ https://test.pypi.org/project/sydpower/0.3.0/"
   ],
   "version": "0.1.0"
 }

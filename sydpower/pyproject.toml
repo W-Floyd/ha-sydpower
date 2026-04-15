@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sydpower"
+version = "0.3.0"
+description = "Python library for Sydpower / BrightEMS BLE inverter devices"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "ESP-FBot Contributors" }
+]
+keywords = ["sydpower", "brightems", "ble", "bleak", "inverter", "modbus", "mqtt"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "bleak>=0.21.0",
+]
+
+[project.urls]
+Homepage = "https://test.pypi.org/project/sydpower/0.3.0/"
+Repository = "https://github.com/ESP-FBot/ESP-FBot.git"
+Documentation = "https://test.pypi.org/project/sydpower/0.3.0/"
+
+[project.scripts]
+sydpower = "sydpower.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["sydpower*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = false
+
+[tool.black]
+line-length = 88
+target-version = ["py39", "py310", "py311", "py312"]
+include = "\\.(py|ipynb)$"
+
+[tool.ruff]
+target-version = "py39"
+line-length = 88
+select = [
+    "E", "F", "W",  # pycodestyle
+    "I",            # isort
+    "N",            # pep8-naming
+    "UP",           # pyupgrade
+    "SIM",          # flake8-simplify
+    "B",            # flake8-bugbear
+]
+ignore = [
+    "E501",         # line too long (black handles this)
+    "B008",         # do not use functions with side effects in defaults
+    "SIM117",       # merge with-statements (sometimes less readable)
+]
