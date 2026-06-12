@@ -256,3 +256,4 @@ apk_analysis/extracted/
 *.apk
 *.xapk
 *.pyc
+analysis/app-service-beautified.js
