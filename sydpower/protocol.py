@@ -104,7 +104,15 @@ def build_write_registers(
         payload = [start, count >> 8, count & 0xFF, *data_bytes]
     else:
         # Legacy path: FC 0x06 writes a single register with a 2-byte address.
-        payload = [start >> 8, start & 0xFF, *data_bytes[:2]]
+        # There is no wire encoding for a multi-register legacy write, so refuse
+        # rather than silently dropping every value after the first.
+        if len(values) != 1:
+            raise ProtocolError(
+                f"protocol_version 0 supports single-register writes only; "
+                f"got {len(values)} values for register {start}. Issue one "
+                f"write per register instead."
+            )
+        payload = [start >> 8, start & 0xFF, *data_bytes]
 
     return _frame(address, 0x06, payload)
 
@@ -180,6 +188,18 @@ class ResponseBuffer:
         # Bit 7 of the function code is set by the device to signal a Modbus
         # exception response; mask it off to get the actual function code.
         fc = self._raw[1] & 0x7F
+
+        # A response for a different function code means the stream has
+        # desynchronised — typically a reply to the *previous* request arriving
+        # late. Holding (0x03) and input (0x04) reads are the same length for a
+        # given register count, so without this check the wrong bank's data is
+        # accepted silently and every register is misinterpreted.
+        if fc != self.expected_func_code:
+            raise ProtocolError(
+                f"Response function code 0x{fc:02X} does not match the "
+                f"requested 0x{self.expected_func_code:02X} — desynchronised "
+                f"response stream (raw prefix: {bytes(self._raw[:8]).hex()})"
+            )
 
         if fc in (0x03, 0x04):
             # Header: [addr, fc, start_hi, start_lo, count_hi, count_lo]

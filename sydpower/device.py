@@ -10,7 +10,7 @@ Typical usage::
     async with SydpowerDevice.from_discovered(devices[0]) as dev:
         holding = await dev.read_holding_registers()
         inputs  = await dev.read_input_registers()
-        await dev.write_register(start=42, value=1)
+        await dev.write_register(start=26, value=1)  # AC output on
 
     # Or connect directly if the address is already known.
     async with SydpowerDevice("AA:BB:CC:DD:EE:FF") as dev:
@@ -21,9 +21,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
+from bleak.backends.device import BLEDevice
 
 from .constants import (
     BLE_NOTIFY_CHAR_UUID,
@@ -34,10 +36,12 @@ from .constants import (
     DEFAULT_MODBUS_COUNT,
     MAX_COMMAND_RETRIES,
     MTU_SETTLE_DELAY,
+    WRITABLE_HOLDING_REGISTERS,
 )
 from .exceptions import (
     CommandTimeoutError,
     ProtocolError,
+    UnsafeRegisterWriteError,
 )
 from .exceptions import ConnectionError as SydConnectionError
 from .protocol import (
@@ -59,7 +63,15 @@ class SydpowerDevice:
     Parameters
     ----------
     address:
-        OS-level BLE address (e.g. ``"AA:BB:CC:DD:EE:FF"``).
+        OS-level BLE address (e.g. ``"AA:BB:CC:DD:EE:FF"``), or a bleak
+        ``BLEDevice``.  Passing a ``BLEDevice`` is preferred when you already
+        have one, since bleak can connect without re-resolving the address.
+    client_factory:
+        Optional coroutine returning an already-connected bleak client.  Supply
+        this when the connection must be made by something other than a local
+        adapter — notably Home Assistant, where ``establish_connection`` routes
+        through whichever adapter or ESPHome Bluetooth proxy can reach the
+        device.  When omitted, a local ``BleakClient`` is created and connected.
     modbus_address:
         Modbus slave address used in every packet (device-specific; default 18).
     modbus_count:
@@ -68,21 +80,35 @@ class SydpowerDevice:
         0 = legacy single-register writes; 1+ = extended multi-register writes.
     connect_timeout:
         Seconds to wait while establishing the BLE connection.
+    allow_unsafe_writes:
+        Bypass the known-safe holding-register check in :meth:`write_registers`.
+        Only for deliberate register probing — a bad settings write can put the
+        device into a boot loop that cannot be fixed over BLE.
     """
 
     def __init__(
         self,
-        address: str,
+        address: str | BLEDevice,
         modbus_address: int = DEFAULT_MODBUS_ADDRESS,
         modbus_count: int = DEFAULT_MODBUS_COUNT,
         protocol_version: int = 1,
         connect_timeout: float = CONNECT_TIMEOUT,
+        allow_unsafe_writes: bool = False,
+        client_factory: Callable[[], Awaitable[BleakClient]] | None = None,
     ) -> None:
-        self.address = address
+        if isinstance(address, BLEDevice):
+            self._ble_device: BLEDevice | None = address
+            self.address = address.address
+        else:
+            self._ble_device = None
+            self.address = address
+
+        self._client_factory = client_factory
         self.modbus_address = modbus_address
         self.modbus_count = modbus_count
         self.protocol_version = protocol_version
         self.connect_timeout = connect_timeout
+        self.allow_unsafe_writes = allow_unsafe_writes
 
         self._client: BleakClient | None = None
         self._active_buffer: ResponseBuffer | None = None
@@ -91,7 +117,11 @@ class SydpowerDevice:
     # ── Convenience constructor ───────────────────────────────────────────────
 
     @classmethod
-    def from_discovered(cls, device: "DiscoveredDevice") -> "SydpowerDevice":  # type: ignore[name-defined]
+    def from_discovered(
+        cls,
+        device: "DiscoveredDevice",  # type: ignore[name-defined]
+        allow_unsafe_writes: bool = False,
+    ) -> "SydpowerDevice":
         """
         Construct a ``SydpowerDevice`` from a ``DiscoveredDevice`` returned by
         :func:`sydpower.scan`.  Modbus parameters are taken from the discovered
@@ -108,6 +138,7 @@ class SydpowerDevice:
             modbus_address=device.modbus_address,
             modbus_count=device.modbus_count,
             protocol_version=device.protocol_version,
+            allow_unsafe_writes=allow_unsafe_writes,
         )
 
     # ── Context manager ───────────────────────────────────────────────────────
@@ -124,13 +155,25 @@ class SydpowerDevice:
     async def connect(self) -> None:
         """Connect to the device and subscribe to BLE notifications."""
         _log.debug("Connecting to %s", self.address)
-        client = BleakClient(self.address, timeout=self.connect_timeout)
-        try:
-            await client.connect()
-        except Exception as exc:
-            raise SydConnectionError(
-                f"Failed to connect to {self.address}: {exc}"
-            ) from exc
+        if self._client_factory is not None:
+            # Caller owns connection establishment (e.g. Home Assistant routing
+            # through a local adapter or an ESPHome Bluetooth proxy).
+            try:
+                client = await self._client_factory()
+            except Exception as exc:
+                raise SydConnectionError(
+                    f"Injected client factory failed for {self.address}: {exc}"
+                ) from exc
+        else:
+            # Prefer the BLEDevice when we have one; bleak avoids a re-scan.
+            target = self._ble_device if self._ble_device is not None else self.address
+            client = BleakClient(target, timeout=self.connect_timeout)
+            try:
+                await client.connect()
+            except Exception as exc:
+                raise SydConnectionError(
+                    f"Failed to connect to {self.address}: {exc}"
+                ) from exc
 
         # Brief pause to allow MTU negotiation to settle before sending commands.
         # Source: rm(200, "setBLEMTU") in app-service-beautified.js line 76197.
@@ -212,15 +255,72 @@ class SydpowerDevice:
         return list(resp.registers)
 
     async def write_register(self, start: int, value: int) -> None:
-        """FC 0x06 — Write a single holding register."""
+        """
+        FC 0x06 — Write a single holding register.
+
+        Raises ``UnsafeRegisterWriteError`` unless the register and value are
+        known-safe; see :meth:`write_registers`.
+        """
         await self.write_registers(start, [value])
 
     async def write_registers(self, start: int, values: list[int]) -> None:
-        """FC 0x06 — Write one or more consecutive holding registers."""
+        """
+        FC 0x06 — Write one or more consecutive holding registers.
+
+        Every register in the span ``start .. start + len(values) - 1`` is
+        checked against :data:`WRITABLE_HOLDING_REGISTERS` before the packet is
+        built.  A register outside that map, or a value outside the register's
+        verified range, raises ``UnsafeRegisterWriteError`` and nothing is sent.
+
+        This guard exists because a bad settings write can put the unit into a
+        permanent boot loop that cannot be fixed over BLE — see the note on
+        ``WRITABLE_HOLDING_REGISTERS``.  Set ``allow_unsafe_writes=True`` on the
+        device to bypass it when deliberately probing unmapped registers.
+        """
+        self._check_writes_safe(start, values)
         packet = build_write_registers(
             self.modbus_address, start, values, self.protocol_version
         )
         await self._send(packet, expected_func_code=0x06)
+
+    def _check_writes_safe(self, start: int, values: list[int]) -> None:
+        """
+        Validate a holding-register write against the known-safe register map.
+
+        Raises ``UnsafeRegisterWriteError`` on the first offending register so
+        that no partial write is ever emitted.
+        """
+        if not values:
+            raise UnsafeRegisterWriteError("No values supplied to write.")
+
+        if self.allow_unsafe_writes:
+            _log.warning(
+                "allow_unsafe_writes is set — skipping the safety check for "
+                "register(s) %d..%d. A bad value here can put the device into "
+                "an unrecoverable boot loop.",
+                start,
+                start + len(values) - 1,
+            )
+            return
+
+        for offset, value in enumerate(values):
+            register = start + offset
+            allowed = WRITABLE_HOLDING_REGISTERS.get(register)
+            if allowed is None:
+                raise UnsafeRegisterWriteError(
+                    f"Register {register} is not a known-safe holding register. "
+                    f"Writable registers are "
+                    f"{sorted(WRITABLE_HOLDING_REGISTERS)}. Writing an "
+                    f"unverified register can put the device into an "
+                    f"unrecoverable boot loop; pass allow_unsafe_writes=True "
+                    f"only if you accept that risk."
+                )
+            low, high = allowed
+            if not low <= value <= high:
+                raise UnsafeRegisterWriteError(
+                    f"Value {value} is outside the verified range "
+                    f"{low}..{high} for register {register}."
+                )
 
     # ── Internal ──────────────────────────────────────────────────────────────
 

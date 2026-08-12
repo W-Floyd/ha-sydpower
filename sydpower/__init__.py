@@ -23,6 +23,7 @@ Quick start::
     asyncio.run(main())
 """
 
+from .constants import WRITABLE_HOLDING_REGISTERS
 from .device import SydpowerDevice
 from .exceptions import (
     CommandTimeoutError,
@@ -30,6 +31,7 @@ from .exceptions import (
     DeviceNotFoundError,
     ProtocolError,
     SydpowerError,
+    UnsafeRegisterWriteError,
 )
 from .exceptions import ConnectionError as SydpowerConnectionError
 from .protocol import (
@@ -55,6 +57,9 @@ __all__ = [
     "ProtocolError",
     "DeviceNotFoundError",
     "CommandTimeoutError",
+    "UnsafeRegisterWriteError",
+    # Write safety
+    "WRITABLE_HOLDING_REGISTERS",
     # Protocol primitives (useful for custom commands / debugging)
     "crc16_modbus",
     "build_read_holding_registers",

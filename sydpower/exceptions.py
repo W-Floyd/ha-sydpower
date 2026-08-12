@@ -23,3 +23,15 @@ class CommandTimeoutError(SydpowerError):
 
 class ConnectionError(SydpowerError):
     """Failed to establish or maintain a BLE connection."""
+
+
+class UnsafeRegisterWriteError(SydpowerError):
+    """
+    Rejected a holding-register write that is not known to be safe.
+
+    Raised when the target register is not in
+    :data:`sydpower.constants.WRITABLE_HOLDING_REGISTERS`, or when the value
+    falls outside that register's verified range.  Writing an unverified
+    register or value can put the device into an unrecoverable boot loop, so
+    this is enforced before anything reaches the wire.
+    """

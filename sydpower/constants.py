@@ -30,3 +30,29 @@ MTU_SETTLE_DELAY: float =  0.2  # pause after MTU negotiation (mirrors rm(200, "
 # ── Retry limits ──────────────────────────────────────────────────────────────
 # Source: app-service-beautified.js line 76411 (app allows 4 total sends = 3 retries)
 MAX_COMMAND_RETRIES: int = 3
+
+# ── Writable holding registers ────────────────────────────────────────────────
+# Writing a bad value to a settings register can put the unit into a permanent
+# 7-8 second boot loop.  This is NOT recoverable in software: Bluetooth never
+# stays up long enough to accept a corrective write, and emulating the internal
+# ESP32 over the ARM<->ESP32 UART to rewrite the registers has been tried and
+# failed.  The only known recovery is physically cutting the ESP32 UART TX pin
+# (pin 21), which permanently disables WiFi/Bluetooth on the unit.
+# Source: Ylianst/ESP-FBot internals/README.md, "Fixing a PowerStation in a
+#         Boot Loop" (upstream commits 4b809d6..2b22754).
+#
+# Therefore writes are restricted to registers with a verified meaning and a
+# verified accepted range.  Map of register number -> (min_value, max_value),
+# both inclusive.  Ranges are taken from the write paths in the upstream
+# ESP-Home component, components/fbot/fbot.cpp lines 567-679.
+WRITABLE_HOLDING_REGISTERS: dict[int, tuple[int, int]] = {
+    13: (1, 5),      # AC charge limit, enumerated 1-5
+    24: (0, 1),      # USB output on/off
+    25: (0, 1),      # DC output on/off
+    26: (0, 1),      # AC output on/off
+    27: (0, 3),      # Light mode: 0=off, 1=on, 2=SOS, 3=flashing
+    56: (0, 1),      # Key sound on/off
+    57: (0, 1),      # AC silent charging on/off
+    66: (0, 500),    # Discharge lower limit, permille (0-50.0%)
+    67: (100, 1000), # Charge upper limit, permille (10.0-100.0%)
+}

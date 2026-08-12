@@ -61,11 +61,13 @@ async def main():
         inputs = await dev.read_input_registers()
         print(f"Input registers: {inputs}")
         
-        # Write single register (FC 0x06)
-        await dev.write_register(start=42, value=1)
+        # Write single register (FC 0x06). Only known-safe registers are
+        # permitted -- see "Write Safety" below.
+        await dev.write_register(start=26, value=1)   # AC output on
         
-        # Write multiple registers
-        await dev.write_registers(start=0, values=[100, 200, 300])
+        # Write multiple consecutive registers. Requires protocol_version >= 1;
+        # legacy v0 devices must issue one write per register.
+        await dev.write_registers(start=66, values=[100, 900])  # 10% / 90% limits
 
 asyncio.run(main())
 ```
@@ -116,6 +118,7 @@ Async BLE interface for a single Sydpower inverter or smart-meter device.
 - `modbus_address`: Modbus slave address (default: 18)
 - `modbus_count`: Number of registers in bulk read (default: 85)
 - `protocol_version`: 0 = legacy, 1+ = extended write format (default: 1)
+- `allow_unsafe_writes`: Bypass the write allowlist (default: `False`)
 
 **Methods**:
 - `connect()`: Establish BLE connection and subscribe to notifications
@@ -124,6 +127,35 @@ Async BLE interface for a single Sydpower inverter or smart-meter device.
 - `read_input_registers(start=0, count=None)`: Read input registers (FC 0x04)
 - `write_register(start, value)`: Write single register (FC 0x06)
 - `write_registers(start, values)`: Write multiple registers
+
+## Write Safety
+
+Writing a bad value to a settings register can put the unit into a permanent
+7-8 second boot loop. This is **not recoverable in software**: Bluetooth never
+stays up long enough to accept a corrective write, and emulating the internal
+ESP32 over the ARM/ESP32 UART to rewrite the registers has been tried and
+failed. The only known recovery is physically cutting the ESP32 UART TX pin,
+which permanently disables WiFi and Bluetooth on the unit.
+
+Because of that, writes are restricted to registers with both a verified
+meaning and a verified accepted range. Anything else raises
+`UnsafeRegisterWriteError` before a packet reaches the wire.
+
+| Register | Meaning | Allowed values |
+| --- | --- | --- |
+| 13 | AC charge limit | 1-5 (enumerated) |
+| 24 | USB output | 0 = off, 1 = on |
+| 25 | DC output | 0 = off, 1 = on |
+| 26 | AC output | 0 = off, 1 = on |
+| 27 | Light mode | 0 = off, 1 = on, 2 = SOS, 3 = flashing |
+| 56 | Key sound | 0 = off, 1 = on |
+| 57 | AC silent charging | 0 = off, 1 = on |
+| 66 | Discharge lower limit | 0-500 permille (0-50.0%) |
+| 67 | Charge upper limit | 100-1000 permille (10.0-100.0%) |
+
+The table lives in `WRITABLE_HOLDING_REGISTERS` in
+[constants.py](constants.py). To probe unmapped registers deliberately, pass
+`allow_unsafe_writes=True` — this logs a warning and accepts the brick risk.
 
 ### `DiscoveredDevice`
 
