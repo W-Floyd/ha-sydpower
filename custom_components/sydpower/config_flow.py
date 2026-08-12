@@ -11,14 +11,36 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_ADDRESS
+from homeassistant.core import callback
 
 from sydpower.constants import DEVICE_NAME_PREFIXES
+from sydpower.calibration import CalibrationSample, fit_correction
 from sydpower.catalog import get_device_params, get_product_model, preload
 
 from .const import (
+    ACTION_ADD_SAMPLE,
+    ACTION_CLEAR_SAMPLES,
+    ACTION_KEEP,
+    ACTIONS,
+    CONF_ACTION,
+    CONF_CALIBRATION_SAMPLES,
     CONF_MODBUS_ADDRESS,
+    CONF_POLL_INTERVAL,
+    CONF_SAMPLE_CHARGE_REPORTED,
+    CONF_SAMPLE_IN_REPORTED,
+    CONF_SAMPLE_IN_TRUE,
+    CONF_SAMPLE_OUT_REPORTED,
+    CONF_SAMPLE_OUT_TRUE,
+    MAX_POLL_INTERVAL,
+    MIN_POLL_INTERVAL,
+    POLL_INTERVAL,
     CONF_MODEL,
     CONF_MODBUS_COUNT,
     CONF_NAME,
@@ -28,6 +50,10 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Watts, as read off a meter or the device. Negative would be a typo, and the
+# fit treats every field as watts regardless of which register it came from.
+_watts = vol.All(vol.Coerce(float), vol.Range(min=0))
 
 DEFAULT_MODBUS_ADDRESS = 18
 DEFAULT_MODBUS_COUNT = 85
@@ -157,3 +183,138 @@ class SydpowerConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
         )
+
+    # ── Options ───────────────────────────────────────────────────────────────
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+    ) -> SydpowerOptionsFlow:
+        """Return the options flow for this entry."""
+        return SydpowerOptionsFlow()
+
+
+class SydpowerOptionsFlow(OptionsFlow):
+    """
+    Poll interval, and calibration of the device's power reporting.
+
+    The device under-reports its output while charging. Rather than ask for a
+    correction model, this collects observations — what an external meter says
+    against what the device says — and fits the model to them. Two observations at
+    different charge rates are what separates a fixed shortfall from a proportional
+    one; see sydpower/calibration.py.
+    """
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Show the current fit and offer to change the interval or the samples."""
+        if user_input is not None:
+            action = user_input[CONF_ACTION]
+            self._poll_interval = user_input[CONF_POLL_INTERVAL]
+            if action == ACTION_ADD_SAMPLE:
+                return await self.async_step_add_sample()
+            samples = [] if action == ACTION_CLEAR_SAMPLES else self._samples
+            return self._save(samples)
+
+        return self.async_show_form(
+            step_id="init",
+            description_placeholders={"fit": self._describe_fit()},
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_POLL_INTERVAL,
+                        default=self.config_entry.options.get(
+                            CONF_POLL_INTERVAL, POLL_INTERVAL
+                        ),
+                    ): vol.All(
+                        vol.Coerce(int),
+                        vol.Range(min=MIN_POLL_INTERVAL, max=MAX_POLL_INTERVAL),
+                    ),
+                    vol.Required(CONF_ACTION, default=ACTION_KEEP): vol.In(ACTIONS),
+                }
+            ),
+        )
+
+    async def async_step_add_sample(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Record one simultaneous reading of the device and external meters."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            sample = {k: v for k, v in user_input.items() if v is not None}
+            has_out = "out_true" in sample and "out_reported" in sample
+            has_in = "in_true" in sample and "in_reported" in sample
+            if not has_out and not has_in:
+                # Without a true/reported pair there is no error to fit, and a
+                # half-filled observation would silently contribute nothing.
+                errors["base"] = "sample_needs_a_pair"
+            else:
+                return self._save([*self._samples, sample])
+
+        return self.async_show_form(
+            step_id="add_sample",
+            errors=errors,
+            description_placeholders={"count": str(len(self._samples))},
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_SAMPLE_CHARGE_REPORTED): _watts,
+                    vol.Optional(CONF_SAMPLE_OUT_REPORTED): _watts,
+                    vol.Optional(CONF_SAMPLE_OUT_TRUE): _watts,
+                    vol.Optional(CONF_SAMPLE_IN_REPORTED): _watts,
+                    vol.Optional(CONF_SAMPLE_IN_TRUE): _watts,
+                }
+            ),
+        )
+
+    # ── Helpers ───────────────────────────────────────────────────────────────
+
+    @property
+    def _samples(self) -> list[dict[str, float]]:
+        return list(self.config_entry.options.get(CONF_CALIBRATION_SAMPLES, []))
+
+    def _save(self, samples: list[dict[str, float]]) -> ConfigFlowResult:
+        """Persist the interval and samples, keeping any other options intact."""
+        return self.async_create_entry(
+            title="",
+            data={
+                **self.config_entry.options,
+                CONF_POLL_INTERVAL: getattr(
+                    self,
+                    "_poll_interval",
+                    self.config_entry.options.get(CONF_POLL_INTERVAL, POLL_INTERVAL),
+                ),
+                CONF_CALIBRATION_SAMPLES: samples,
+            },
+        )
+
+    def _describe_fit(self) -> str:
+        """Human-readable summary of what the stored samples currently imply."""
+        samples = self._samples
+        if not samples:
+            return (
+                "No calibration samples yet, so readings are passed through "
+                "untouched."
+            )
+
+        model = fit_correction([CalibrationSample(**s) for s in samples])
+        if not model.active:
+            return f"{model.samples} sample(s) recorded, implying no correction."
+
+        parts = [f"{model.samples} sample(s)"]
+        if model.slope_resolved:
+            parts.append(
+                f"correction = {model.offset:.0f} W + "
+                f"{model.slope:.3f} x charge power"
+            )
+        else:
+            parts.append(
+                f"correction = {model.offset:.0f} W flat — all samples share one "
+                "charge rate, so a proportional component cannot be separated. Add "
+                "a sample at a different charge rate (change the AC charging power "
+                "setting) to resolve it"
+            )
+        parts.append(f"worst residual {model.worst_residual:.0f} W")
+        return "; ".join(parts)

@@ -983,3 +983,115 @@ class TestActionRegisters:
         for value in (0, 2):
             with pytest.raises(UnsafeRegisterWriteError):
                 self._device()._check_writes_safe(64, [value])
+
+
+class TestCalibrationFit:
+    """
+    Fitting the device's output under-report from measurements.
+
+    The defect is real and measured, but its shape is not — see
+    sydpower/calibration.py. These tests pin what matters: nothing is corrected
+    without samples, nothing is corrected when the device is not charging, and a
+    slope is only claimed when the samples can actually support one.
+    """
+
+    @staticmethod
+    def _sample(charge, out_reported, out_true, **kw):
+        from sydpower.calibration import CalibrationSample
+
+        return CalibrationSample(
+            charge_reported=charge,
+            out_reported=out_reported,
+            out_true=out_true,
+            **kw,
+        )
+
+    def test_no_samples_corrects_nothing(self):
+        from sydpower.calibration import fit_correction
+
+        model = fit_correction([])
+        assert not model.active
+        assert model.watts(250) == 0.0
+
+    def test_single_sample_gives_an_offset_and_no_slope(self):
+        """One charge rate cannot separate a flat error from a proportional one."""
+        from sydpower.calibration import fit_correction
+
+        model = fit_correction([self._sample(249, 358, 490)])
+        assert model.offset == pytest.approx(132.0)
+        assert model.slope == 0.0
+        assert model.slope_resolved is False
+        assert model.watts(249) == pytest.approx(132.0)
+
+    def test_samples_at_one_rate_average_rather_than_fit(self):
+        from sydpower.calibration import fit_correction
+
+        model = fit_correction(
+            [self._sample(249, 358, 490), self._sample(249, 360, 490)]
+        )
+        assert model.samples == 2
+        assert model.slope_resolved is False
+        assert model.offset == pytest.approx(131.0)
+        assert model.worst_residual == pytest.approx(1.0)
+
+    def test_two_rates_separate_offset_from_slope(self):
+        """
+        A purely proportional error must fit as slope, not offset.
+
+        Errors of 132 W at 249 W and 265 W at 500 W of charge are 0.53 x charge
+        with nothing constant, which is the hypothesis a second charge rate exists
+        to test.
+        """
+        from sydpower.calibration import fit_correction
+
+        model = fit_correction(
+            [self._sample(249, 358, 490), self._sample(500, 225, 490)]
+        )
+        assert model.slope_resolved is True
+        assert model.slope == pytest.approx(0.53, abs=0.01)
+        assert model.offset == pytest.approx(0.0, abs=1.0)
+        # And it extrapolates rather than repeating the measured offset.
+        assert model.watts(1000) == pytest.approx(530.0, abs=10.0)
+
+    def test_correction_never_applies_without_charging(self):
+        from sydpower.calibration import fit_correction
+
+        model = fit_correction([self._sample(249, 358, 490)])
+        # Pass-through: the output figure matched external meters to 1.5%.
+        assert model.watts(0) == 0.0
+        # A missing reading must not manufacture a correction.
+        assert model.watts(None) == 0.0
+
+    def test_input_pair_contributes_when_output_is_absent(self):
+        from sydpower.calibration import CalibrationSample, fit_correction
+
+        model = fit_correction(
+            [CalibrationSample(charge_reported=249, in_reported=608, in_true=737)]
+        )
+        assert model.offset == pytest.approx(129.0)
+
+    def test_both_pairs_are_averaged(self):
+        from sydpower.calibration import fit_correction
+
+        sample = self._sample(249, 358, 490, in_reported=608, in_true=737)
+        # 132 from the output pair, 129 from the input pair.
+        assert sample.error == pytest.approx(130.5)
+        assert fit_correction([sample]).offset == pytest.approx(130.5)
+
+    def test_sample_without_a_pair_is_ignored(self):
+        from sydpower.calibration import CalibrationSample, fit_correction
+
+        half = CalibrationSample(charge_reported=249, out_reported=358)
+        assert half.error is None
+        assert not fit_correction([half]).active
+
+    def test_derived_charge_power_checks_register_three(self):
+        """
+        Wall draw less the load gives the true charge power independently.
+
+        This is what showed register 3 to be accurate, so it is reported rather
+        than fed into the fit.
+        """
+        sample = self._sample(249, 358, 490, in_reported=608, in_true=737)
+        assert sample.charge_true == pytest.approx(247.0)
+        assert sample.charge_error == pytest.approx(-2.0)

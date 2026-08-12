@@ -18,5 +18,31 @@
       "no_devices_found": "No Sydpower devices found nearby. Make sure the device is powered on and in range.",
       "advertising_state_error": "Device {address} is not advertising. Ensure it is powered on and in range, then try again."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Sydpower options",
+        "description": "**Current calibration:** {fit}\n\n**Polling** — a poll takes about 1 to 1.5 seconds, most of it opening the Bluetooth connection, and a failing poll retries for longer. Home Assistant's floor is 5 seconds; intervals near it risk overlapping refreshes.\n\n**Calibration** — while charging, this device under-reports its AC output and its total input. Add samples of what an external meter says against what the device says, and the correction is fitted from them. Samples at two or more different charge rates are what tell a fixed shortfall apart from one that scales with charge rate — change the AC charging power setting between samples.",
+        "data": {
+          "poll_interval": "Poll interval (seconds)",
+          "action": "Calibration"
+        }
+      },
+      "add_sample": {
+        "title": "Add a calibration sample",
+        "description": "Read these at one moment, with the device charging — the error does not appear otherwise. {count} sample(s) recorded so far.\n\nGive the reported charge power, then at least one true/reported pair. Supplying both the true input and true output also derives the true charge power, which checks the device's own charge reading.\n\n*True input* is a plug meter at the wall socket. *True output* is what the load itself reports. The reported values are this integration's Input power, Output power and Charge power sensors.",
+        "data": {
+          "charge_reported": "Charge power, reported (W)",
+          "out_reported": "Output power, reported (W)",
+          "out_true": "Output power, true (W)",
+          "in_reported": "Input power, reported (W)",
+          "in_true": "Input power, true — wall meter (W)"
+        }
+      }
+    },
+    "error": {
+      "sample_needs_a_pair": "A sample needs a true and reported value for the output, the input, or both — otherwise there is no error to measure."
+    }
   }
 }

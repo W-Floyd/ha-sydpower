@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-12
+
+An options flow, and with it calibration for a device defect found by measuring
+against external instruments.
+
+### Added
+- **An options flow**, reachable from the integration entry's Configure button.
+- **Configurable poll interval**, 5 to 3600 seconds, defaulting to the previous
+  fixed 30. A poll costs 1.0-1.5 s, most of it spent opening the Bluetooth
+  connection, and the retry path runs longer, so intervals near the floor risk
+  overlapping refreshes.
+- **Power calibration fitted from measurements.** The device under-reports its AC
+  output while charging, and its total input with it, by ~130 W on the unit tested
+  — confirmed against a plug meter and a UPS's own reporting, with charging stopped
+  mid-measurement and nothing else altered.
+
+  Rather than ask for a correction factor, the options collect *observations* —
+  what an external meter says against what the device says — and fit
+  `error = offset + slope x charge power` to them. This matters because one charge
+  rate cannot tell a flat error from a proportional one: at 249 W of charging, a
+  flat 130 W and 0.53 x charge power are indistinguishable. Samples at two or more
+  different charge rates separate them by least squares, and the fit reports both
+  whether the slope was actually measured and its worst residual, so a model that
+  does not describe the device shows itself instead of being trusted.
+
+  Nothing is corrected until samples are recorded, and no correction ever applies
+  while the device is not charging — in pass-through its output figure matched the
+  external instruments to within 1.5%, so correcting there would introduce an error
+  rather than remove one.
+
+### Changed
+- **Register 39 (output power) and register 6 (total input) are documented as
+  unreliable while charging**, with the measurements in
+  `docs/register-map-v0.md`. Register 3 (charge power) is accurate — 249 W against
+  254 W derived independently as wall-meter-minus-load.
+- **Register 6 is derived by the device, not measured.** It equals `39 + 3` in every
+  sample, including `497 = 497 + 0` in pass-through where a real input measurement
+  must exceed output by the conversion losses. It therefore carries no information
+  of its own and inherits register 39's error. An earlier note read this identity as
+  evidence the device's accounting could be trusted; it only shows the device does
+  one subtraction consistently.
+- **Register 4 is confirmed as DC/solar input**, having read 0 in every earlier
+  sample for want of anything connected. With the mains disconnected it reported
+  162 W then 151 W and register 6 equalled it exactly.
+- **Register 22 is AC input frequency, and register 19 is not a frequency
+  measurement** — the latter held 600 with no mains and again with the inverter
+  stopped, where a live reading falls to zero. No settable 50/60 Hz mode is
+  reachable: the app has no `Hz` string and no frequency setting for any of its 169
+  products, and no holding register holds 50, 60 or 600.
+- The note claiming the device's figures run *higher* than an external meter,
+  inherited from upstream rather than measured, is corrected. Locally they run
+  lower, and the display is not independent corroboration since it reads the same
+  registers.
+
 ## [0.4.1] - 2026-08-12
 
 Follow-ups from running 0.4.0 on hardware.

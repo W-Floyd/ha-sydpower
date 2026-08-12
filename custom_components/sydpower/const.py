@@ -11,8 +11,18 @@ CONF_MODBUS_ADDRESS = "modbus_address"
 CONF_MODBUS_COUNT = "modbus_count"
 CONF_PROTOCOL_VERSION = "protocol_version"
 
-# How often to poll the device for fresh register data (seconds).
+# How often to poll the device for fresh register data (seconds). Overridable per
+# entry through the options flow; this is the default.
 POLL_INTERVAL = 30
+
+# Home Assistant's documented floor for a polling integration. A healthy cycle here
+# is 1.0-1.5 s, most of it spent establishing the BLE connection, and the retry path
+# can run far longer, so anything near this floor risks overlapping refreshes.
+MIN_POLL_INTERVAL = 5
+MAX_POLL_INTERVAL = 3600
+
+# Option keys (config entry options, not data).
+CONF_POLL_INTERVAL = "poll_interval"
 
 # ── Control registers (holding bank) ──────────────────────────────────────────
 # Only the registers the integration must name explicitly. Output controls are no
@@ -70,3 +80,24 @@ LIGHT_MODES = ["Off", "On", "SOS", "Flashing"]
 
 # Thresholds are stored in permille on the device (80% -> 800).
 THRESHOLD_SCALE = 10
+
+# ── Options: calibration ──────────────────────────────────────────────────────
+# The device under-reports its output while charging. Rather than store a chosen
+# correction model, the options hold observations and the model is fitted from
+# them — see sydpower/calibration.py for the measurements and the reasoning.
+CONF_CALIBRATION_SAMPLES = "calibration_samples"
+
+# Fields of one observation, named to match CalibrationSample's arguments so a
+# stored dict can be splatted straight into it.
+CONF_SAMPLE_CHARGE_REPORTED = "charge_reported"
+CONF_SAMPLE_OUT_REPORTED = "out_reported"
+CONF_SAMPLE_OUT_TRUE = "out_true"
+CONF_SAMPLE_IN_REPORTED = "in_reported"
+CONF_SAMPLE_IN_TRUE = "in_true"
+
+# What the options form should do, since a list needs more than one form.
+CONF_ACTION = "action"
+ACTION_KEEP = "keep"
+ACTION_ADD_SAMPLE = "add_sample"
+ACTION_CLEAR_SAMPLES = "clear_samples"
+ACTIONS = (ACTION_KEEP, ACTION_ADD_SAMPLE, ACTION_CLEAR_SAMPLES)

@@ -4,14 +4,18 @@ Sensor platform for Sydpower BLE devices.
 Sensors are defined from registers verified against real hardware — see
 docs/register-map-v0.md — rather than derived from the product catalog.
 
-The catalog is authoritative for Modbus parameters (slave address, register
-count, protocol version) but its feature indices are not register numbers on
-this hardware: a child entry's ``input_index`` is a sub-index within its parent.
-The light's children are ``1``, ``2`` and ``3`` — register 27's *values* for
-on/SOS/flashing — and the USB children are ``3, 4, 6, 7`` while the measured
-port-power registers are 30, 31 and 35. Reading those as register numbers, from
-both banks, and averaging non-zero results produced readings like 32,893 W
-(``0xFFFF`` from a holding sentinel averaged with an input value).
+The catalog is authoritative for Modbus parameters (slave address, register count,
+protocol version), and its ``holding_index`` and ``input_index`` are meaningful —
+but neither names an *input* register. ``input_index`` is a bit position in the
+combined state word, which is what the binary sensor platform reads it as. Taking
+those values for input-register numbers, reading both banks and averaging non-zero
+results is what once produced readings like 32,893 W (``0xFFFF`` from a holding
+sentinel averaged with an input value), so the measured registers here stay
+explicit.
+
+Two of these readings can be corrected for a device defect: while charging, the
+device under-reports its output, and its total input with it. Nothing is corrected
+unless configured — see ``sydpower.calibration``.
 """
 
 from __future__ import annotations
@@ -46,6 +50,10 @@ from .entity import SydpowerEntity
 # Register 41 is the state word's high half, so its AC bit sits 16 places up.
 AC_OUTPUT_STATE_BIT = 16 + STATE_AC_BIT.bit_length() - 1
 
+# Charge power, which gates the output correction: the under-report has only been
+# observed while charging, and in pass-through the output figure was accurate.
+REG_CHARGE_POWER = 3
+
 
 # Firmware versions, from the holding bank. The app posts exactly these four
 # registers to its backend under these names (app-service.js, the MCU_version
@@ -72,6 +80,10 @@ class SydpowerSensorDescription(SensorEntityDescription):
     # Bit of the state word that must be set for the reading to mean anything. The
     # inverter's output voltage, for instance, floats when the output is off.
     requires_state_bit: int | None = None
+    # Whether the configured output-power correction applies to this reading. Both
+    # the output figure and the total input are affected, the latter because the
+    # device derives it from the former.
+    correctable: bool = False
 
 
 SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
@@ -129,6 +141,7 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
     ),
     SydpowerSensorDescription(
         key="input_power",
+        correctable=True,
         name="Input power",
         register=6,
         native_unit_of_measurement=UnitOfPower.WATT,
@@ -137,6 +150,7 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
     ),
     SydpowerSensorDescription(
         key="output_power",
+        correctable=True,
         name="Output power",
         register=39,
         native_unit_of_measurement=UnitOfPower.WATT,
@@ -152,10 +166,9 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SydpowerSensorDescription(
-        # Unverified: has read 0 in every sample, consistent with nothing
-        # connected to the DC/solar input. The register number comes from the
-        # earlier ESP-FBot integration, whose other power indices proved correct
-        # on this device.
+        # Confirmed once solar was producing with the mains disconnected: 162 W
+        # then 151 W, having read 0 in every earlier sample for want of anything
+        # connected. Register 6 equalled it exactly in those frames.
         key="dc_input_power",
         name="DC input power",
         register=4,
@@ -298,9 +311,23 @@ class SydpowerSensor(SydpowerEntity, SensorEntity):
         if value is None:
             return None
         divisor = self.entity_description.divisor
-        if divisor == 1:
+        correction = self._correction()
+        if divisor == 1 and not correction:
+            # Raw watts and minutes stay integers rather than gaining a ".0".
             return value
-        return round(value / divisor, 2)
+        return round(value / divisor + correction, 2)
+
+    def _correction(self) -> float:
+        """
+        Watts to add to this reading, per the entry's options.
+
+        Zero unless this is one of the affected registers and calibration samples
+        have been recorded. The device is only known to under-report while charging,
+        so the model gates itself on charge power rather than applying always.
+        """
+        if not self.entity_description.correctable:
+            return 0.0
+        return self.coordinator.correction.watts(self._input(REG_CHARGE_POWER))
 
 
 class SydpowerFirmwareSensor(SydpowerEntity, SensorEntity):

@@ -20,7 +20,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from sydpower import SydpowerDevice
 from sydpower.exceptions import SydpowerError
 
-from .const import POLL_INTERVAL
+from sydpower.calibration import (
+    NO_CORRECTION,
+    CalibrationSample,
+    CorrectionModel,
+    fit_correction,
+)
+
+from .const import CONF_CALIBRATION_SAMPLES, CONF_POLL_INTERVAL, POLL_INTERVAL
 
 # Seconds to wait after a write before reading back, so the refresh reflects the
 # change rather than the pre-write state.
@@ -78,7 +85,9 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
             hass,
             _LOGGER,
             name=f"Sydpower {name}",
-            update_interval=timedelta(seconds=POLL_INTERVAL),
+            update_interval=timedelta(
+                seconds=entry.options.get(CONF_POLL_INTERVAL, POLL_INTERVAL)
+            ),
             # Required by recent Home Assistant cores; it ties the coordinator's
             # background refresh to the config entry's lifecycle.
             config_entry=entry,
@@ -92,6 +101,47 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
         # serialised. Without this a scheduled poll can fire while a write is in
         # flight and Home Assistant ends up contending with itself.
         self._io_lock = asyncio.Lock()
+        # Fitted lazily; the entry reloads whenever the samples change.
+        self._correction: CorrectionModel | None = None
+
+    # ── Options ───────────────────────────────────────────────────────────────
+
+    @property
+    def correction(self) -> CorrectionModel:
+        """
+        The correction fitted from the entry's calibration samples.
+
+        Fitted once per entry load and cached, since the samples only change
+        through the options flow and that reloads the entry. Returns a model that
+        corrects nothing when no samples have been recorded, which is the default.
+        """
+        if self._correction is None:
+            options = self.config_entry.options if self.config_entry else {}
+            samples = options.get(CONF_CALIBRATION_SAMPLES) or []
+            try:
+                self._correction = fit_correction(
+                    [CalibrationSample(**s) for s in samples]
+                )
+            except TypeError:
+                # Stored samples come from an earlier version whose fields differ.
+                # Passing readings through beats guessing at what they meant.
+                _LOGGER.warning(
+                    "Ignoring %d calibration sample(s) that do not match the "
+                    "current format; re-record them in the integration options",
+                    len(samples),
+                )
+                self._correction = NO_CORRECTION
+            if self._correction.active:
+                _LOGGER.debug(
+                    "Power correction from %d sample(s): %+.1f W %+.4f x charge "
+                    "(slope %s, worst residual %.1f W)",
+                    self._correction.samples,
+                    self._correction.offset,
+                    self._correction.slope,
+                    "measured" if self._correction.slope_resolved else "assumed zero",
+                    self._correction.worst_residual,
+                )
+        return self._correction
 
     # ── Polling ───────────────────────────────────────────────────────────────
 
