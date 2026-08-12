@@ -579,10 +579,29 @@ class TestWriteSafety:
 
     def test_multi_register_span_checks_each_value(self):
         """Each value is validated against its own register's range."""
-        # 100 is valid for register 66 but below register 67's minimum of 100...
-        # so use a value that is fine for 66 and invalid for 67.
+        # 50 is fine for register 66, whose range starts at 0, but below register
+        # 67's minimum, so the span must be refused on account of the second value.
         with pytest.raises(UnsafeRegisterWriteError, match="register 67"):
             self._device()._check_writes_safe(66, [0, 50])
+
+    def test_charge_ceiling_permits_the_apps_floor_and_below(self):
+        """
+        The charge ceiling goes down to 100 permille, not the app's 600.
+
+        The hardware accepts and holds 100, and a ceiling that low is how charging
+        is held off through a high-tariff period. This was once narrowed to the
+        app's slider range, which removed a setting in real use, so the lower bound
+        is asserted rather than left to a comment.
+        """
+        from sydpower.constants import WRITABLE_HOLDING_REGISTERS
+
+        assert WRITABLE_HOLDING_REGISTERS[67] == (100, 1000)
+        device = self._device()
+        device._check_writes_safe(67, [100])  # inhibit charging
+        device._check_writes_safe(67, [600])  # the app's floor
+        device._check_writes_safe(67, [1000])
+        with pytest.raises(UnsafeRegisterWriteError, match="outside the verified range"):
+            device._check_writes_safe(67, [99])
 
     def test_empty_values_rejected(self):
         """An empty write is meaningless and rejected."""

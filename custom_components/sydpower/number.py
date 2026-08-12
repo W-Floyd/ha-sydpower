@@ -45,8 +45,11 @@ NUMBER_DESCRIPTIONS: tuple[SydpowerNumberDescription, ...] = (
         key="threshold_charge",
         name="Charge threshold",
         native_unit_of_measurement=PERCENTAGE,
-        # The app's slider is min 600, max 1000, step 10 in permille.
-        native_min_value=60.0,
+        # Down to 10%, not the app's 60% floor. The hardware accepts and holds a
+        # ceiling of 100 permille, which is useful for holding charging off through
+        # a high-tariff period from an automation; the app's floor is its own
+        # product decision.
+        native_min_value=10.0,
         native_max_value=100.0,
         native_step=1.0,
         mode=NumberMode.BOX,

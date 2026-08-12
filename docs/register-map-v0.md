@@ -59,7 +59,7 @@ because these are the persisted registers implicated in the boot loop:
 | 13 | AC charge limit (charge speed) | 2 | 2 → 500 W |
 | 57 | AC silent charging | 0 | 0 (off) |
 | 66 | Discharge floor, permille | 100 | 100 (10.0%) |
-| 67 | Charge ceiling, permille | 830, then 1000 | 1000 (100.0%) |
+| 67 | Charge ceiling, permille | 830, then 1000 | 1000 (100.0%); later read 100, set deliberately |
 
 The catalog describes **neither** register, for any of its 169 products, yet the app
 sets both — on its energy-management page, writing register 66 and 67 directly.
@@ -68,12 +68,22 @@ Its sliders give the real bounds:
 | Register | Slider | Range |
 | --- | --- | --- |
 | 66 | min 0, max 500, step 10 | discharge floor, 0-50% |
-| 67 | **min 600**, max 1000, step 10 | charge ceiling, **60-100%** |
+| 67 | min 600, max 1000, step 10 | charge ceiling as the *app* offers it |
 
 Permille is confirmed by the app's own display expression,
-`percentageFilter(value / 500 / 2)`, i.e. value / 1000. Note the charge ceiling
-cannot go below 60%: an earlier version of this integration offered 10%, a setting
-the app never permits.
+`percentageFilter(value / 500 / 2)`, i.e. value / 1000.
+
+**The app's floor of 600 is not the device's.** Register 67 accepts values down to
+100 and holds them — a unit in service here runs 100 permille to inhibit charging
+through high-tariff periods. This integration therefore permits 100-1000 rather
+than mirroring the slider.
+
+That distinction was learned the hard way. An earlier revision allowed 100-1000,
+this document then declared 60% a hard floor on the strength of the slider alone,
+and the allowlist was narrowed to match — which silently removed a setting that
+was in real use and could not be written back from Home Assistant afterwards. A
+bound in the app is evidence of a product decision, not of a device limit; only a
+refused or misbehaving write is evidence of the latter.
 
 Registers 56 and 57 are likewise absent from the catalog but real: the app writes
 56 from a toggle labelled `device.key-sound`, and binds holding 57 as a form

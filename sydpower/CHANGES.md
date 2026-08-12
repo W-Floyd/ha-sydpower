@@ -46,8 +46,11 @@ and will show as unavailable until they are deleted.
   Bluetooth matchers so they cannot drift from it.
 
 ### Fixed
-- **The charge threshold's lower bound was wrong**, given as 100 permille where
-  the app's slider floor is 600.
+- **The charge threshold accepts 10-100% again.** It had been narrowed to 60-100%
+  to match the app's slider, which removed a setting that works: the hardware
+  accepts and holds a ceiling of 100 permille, and a ceiling that low is how you
+  hold charging off through a high-tariff period from an automation. The app's
+  floor is a product decision rather than a device limit.
 - **Two switches were wrongly removed** as unverified. Key sound (register 56) and
   AC silent charging (register 57) are both written by the app; the catalog simply
   does not describe them, which is not the same as the device not having them.
