@@ -105,15 +105,54 @@ jobs:
           name: sydpower-wheel
           path: sydpower/dist/*.whl
 
-      - name: Attach wheel to the release
+      - name: Extract release notes from the changelog
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          cat > /tmp/extract_notes.py <<'PY'
+          import pathlib, re, sys
+
+          version = sys.argv[1].removeprefix("v")
+          text = pathlib.Path("sydpower/CHANGES.md").read_text()
+          # This version's section runs to the next version heading, or the end.
+          match = re.search(
+              rf"^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)",
+              text,
+              re.M | re.S,
+          )
+          if match is None or not match.group(1).strip():
+              sys.exit(1)
+          print(match.group(1).strip())
+          PY
+          if python /tmp/extract_notes.py "$GITHUB_REF_NAME" > /tmp/notes.md; then
+            echo "notes taken from CHANGES.md:"
+            cat /tmp/notes.md
+          else
+            # Not fatal: the tag is already pushed, so refusing here would leave a
+            # tag with no release. Fall back and flag it instead.
+            echo "::warning::no CHANGES.md section for $GITHUB_REF_NAME; using generated notes"
+            rm -f /tmp/notes.md
+          fi
+
+      - name: Publish the release with the wheel attached
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create the release if the tag was pushed without one; otherwise just
-          # upload, replacing any asset of the same name.
-          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
-            || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                 --title "$GITHUB_REF_NAME" --generate-notes
+          if [ -f /tmp/notes.md ]; then
+            notes=(--notes-file /tmp/notes.md)
+          else
+            notes=(--generate-notes)
+          fi
+
+          # Create the release if the tag was pushed without one; if it already
+          # exists, refresh its notes so CHANGES.md stays the single source.
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            [ -f /tmp/notes.md ] && gh release edit "$GITHUB_REF_NAME" \
+              --repo "$GITHUB_REPOSITORY" --notes-file /tmp/notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+              --title "$GITHUB_REF_NAME" "${notes[@]}"
+          fi
+
           gh release upload "$GITHUB_REF_NAME" sydpower/dist/*.whl \
             --repo "$GITHUB_REPOSITORY" --clobber
