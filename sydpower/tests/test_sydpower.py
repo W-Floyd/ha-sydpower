@@ -752,3 +752,76 @@ class TestFaultMessageOverrides:
         reported = active_faults(registers)
         assert reported, "no fault reported for a set bit"
         assert not any("一" <= c <= "鿿" for c in reported[0]), reported
+
+
+class TestStateWord:
+    """
+    Test the combined state word and catalog state resolution.
+
+    A state's catalog ``input_index`` is a bit in a 32-bit word built from two
+    input registers, not a register number. Reading it as a register is what made
+    these look unusable: index 25 is the USB output, which is bit 9 of register 41.
+    """
+
+    KEY = "00004380-0000-1000-8000-00805F9B34FB_POWER-8043"
+
+    def test_word_puts_the_first_register_in_the_low_half(self):
+        from sydpower.catalog import STATE_WORD_REGISTERS, state_word
+
+        low, high = STATE_WORD_REGISTERS
+        registers = [0] * 80
+        registers[low] = 0x000F
+        registers[high] = 0x0001
+        word = state_word(registers)
+        assert word & 0xFFFF == 0x000F
+        assert word >> 16 == 0x0001
+
+    def test_word_is_none_when_registers_are_missing(self):
+        from sydpower.catalog import state_word
+
+        assert state_word([0] * 10) is None
+
+    def test_output_indices_map_onto_register_41_bits(self):
+        """
+        The four outputs are indices 25-28, i.e. bits 9-12 of the high register.
+
+        This is the relationship that was measured on hardware by toggling each
+        output, and it must keep agreeing with the catalog.
+        """
+        from sydpower.catalog import STATE_WORD_REGISTERS, get_product_states, state_word
+
+        _low, high = STATE_WORD_REGISTERS
+        states = {
+            s["function_name"]: s["input_index"]
+            for s in get_product_states(self.KEY)
+            if s.get("input_index") is not None and not s.get("parent_id")
+        }
+        for name, register_bit in (
+            ("USB output", 9),
+            ("DC output", 10),
+            ("AC output", 11),
+            ("LED light", 12),
+        ):
+            assert states[name] == 16 + register_bit, name
+
+            registers = [0] * 80
+            registers[high] = 1 << register_bit
+            assert state_word(registers) >> states[name] & 1
+
+    def test_product_states_include_ports(self):
+        """Ports are children, and are what make per-port sensors possible."""
+        from sydpower.catalog import get_product_states
+
+        states = get_product_states(self.KEY)
+        parents = [s for s in states if not s.get("parent_id")]
+        children = [s for s in states if s.get("parent_id")]
+        assert len(parents) >= 4
+        assert len(children) >= 6
+        by_id = {s["id"]: s for s in states}
+        for child in children:
+            assert child["parent_id"] in by_id, child
+
+    def test_unknown_product_has_no_states(self):
+        from sydpower.catalog import get_product_states
+
+        assert get_product_states("00000000-0000-0000-0000-000000000000_NOPE") == []

@@ -614,6 +614,26 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
     catalog["settings"] = setting_defs
     log("build", f"{len(setting_defs)} setting definitions")
 
+    # States, normalised the same way. `input_index` is *not* a register: it is a
+    # bit index into the 32-bit word the app builds from two input registers, low
+    # half from the first and high half from the second (see STATE_WORD_REGISTERS).
+    # `parent_id` distinguishes an output from one of its ports.
+    state_defs: list[dict[str, Any]] = []
+    state_index: dict[str, int] = {}
+    for entry in detail.get("state_list_all", []):
+        definition = {"id": entry["_id"]}
+        definition.update(
+            {
+                k: entry[k]
+                for k in ("function_name", "holding_index", "input_index", "parent_id", "protocol_version")
+                if k in entry
+            }
+        )
+        state_index[entry["_id"]] = len(state_defs)
+        state_defs.append(definition)
+    catalog["states"] = state_defs
+    log("build", f"{len(state_defs)} state definitions")
+
     # Firmware gates: the app hides some setting options on specific product +
     # panel-version combinations. Only present when fetched with a user token.
     # The router wraps its payload in a code/msg envelope, so the useful fields
@@ -704,6 +724,13 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
         ]
         if indexes:
             catalog["products"][key]["setting_indexes"] = indexes
+        state_ids = [
+            state_index[i]
+            for i in module.get("state_list_ids", [])
+            if i in state_index
+        ]
+        if state_ids:
+            catalog["products"][key]["state_indexes"] = state_ids
 
         resolved_states = [
             _feature(states[i]) for i in module.get("state_list_ids", []) if i in states

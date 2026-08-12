@@ -1,17 +1,26 @@
 """
 Binary sensor platform for Sydpower BLE devices.
 
-Output states come from the bitfield in input register 41, whose bits were
-confirmed by toggling each output in isolation on real hardware. See
-docs/register-map-v0.md.
+Output and port states are built from the product catalog. A state's catalog
+``input_index`` is not a register: it is a bit position in the 32-bit word the app
+assembles from two input registers, the first supplying bits 0-15 and the second
+bits 16-31. That is why indices 25, 26, 27 and 28 are the USB, DC, AC and light
+outputs — they are bits 9 to 12 of register 41. Verified against hardware for
+every parent and every port on this device.
+
+Because the catalog also describes each output's individual ports, this yields
+per-port sensors rather than only the four outputs, and works for any product in
+the catalog. Products the catalog does not describe fall back to the four
+hardcoded bits.
 
 These report the device's own view of what is live, which is not always the same
-as the control register a switch writes: the light's control register can hold a
-mode value while bit 12 simply reports whether it is lit.
+as the control register a switch writes: the light's control register holds a mode
+value while its state bit simply reports whether it is lit.
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from homeassistant.components.binary_sensor import (
@@ -24,58 +33,132 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from sydpower.catalog import active_faults, fault_value, get_faults
+from sydpower.catalog import (
+    active_faults,
+    fault_value,
+    get_faults,
+    get_product_states,
+    state_word,
+)
 
 from .const import (
+    CONF_PRODUCT_KEY,
     DOMAIN,
+    REG_LIGHT_CONTROL,
     STATE_AC_BIT,
     STATE_DC_BIT,
     STATE_LIGHT_BIT,
-    STATE_REGISTER,
     STATE_USB_BIT,
 )
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
 
+_LOGGER = logging.getLogger(__name__)
+
+# Register 41 occupies the word's high half, so its bit 9 is word bit 25.
+_HIGH_HALF = 16
+
+# Stable keys for the four outputs, so entity ids survive these becoming
+# catalog-derived rather than hardcoded.
+STABLE_KEYS: dict[int, tuple[str, BinarySensorDeviceClass]] = {
+    _HIGH_HALF + STATE_USB_BIT.bit_length() - 1: ("usb_active", BinarySensorDeviceClass.POWER),
+    _HIGH_HALF + STATE_DC_BIT.bit_length() - 1: ("dc_active", BinarySensorDeviceClass.POWER),
+    _HIGH_HALF + STATE_AC_BIT.bit_length() - 1: ("ac_active", BinarySensorDeviceClass.POWER),
+    _HIGH_HALF + STATE_LIGHT_BIT.bit_length() - 1: ("light_active", BinarySensorDeviceClass.LIGHT),
+}
+
 
 @dataclass(frozen=True, kw_only=True)
 class SydpowerBinarySensorDescription(BinarySensorEntityDescription):
-    """Describes a binary sensor backed by one bit of an input register."""
+    """Describes a binary sensor backed by one bit of the state word."""
 
-    register: int
-    bit_mask: int
+    bit: int
 
 
-BINARY_SENSOR_DESCRIPTIONS: tuple[SydpowerBinarySensorDescription, ...] = (
-    SydpowerBinarySensorDescription(
-        key="usb_active",
-        name="USB output",
-        register=STATE_REGISTER,
-        bit_mask=STATE_USB_BIT,
-        device_class=BinarySensorDeviceClass.POWER,
-    ),
-    SydpowerBinarySensorDescription(
-        key="dc_active",
-        name="DC output",
-        register=STATE_REGISTER,
-        bit_mask=STATE_DC_BIT,
-        device_class=BinarySensorDeviceClass.POWER,
-    ),
-    SydpowerBinarySensorDescription(
-        key="ac_active",
-        name="AC output",
-        register=STATE_REGISTER,
-        bit_mask=STATE_AC_BIT,
-        device_class=BinarySensorDeviceClass.POWER,
-    ),
-    SydpowerBinarySensorDescription(
-        key="light_active",
-        name="Light",
-        register=STATE_REGISTER,
-        bit_mask=STATE_LIGHT_BIT,
-        device_class=BinarySensorDeviceClass.LIGHT,
-    ),
-)
+def _describe(bit: int, name: str) -> SydpowerBinarySensorDescription:
+    key, device_class = STABLE_KEYS.get(
+        bit, (f"state_{bit}", BinarySensorDeviceClass.POWER)
+    )
+    return SydpowerBinarySensorDescription(
+        key=key, name=name, bit=bit, device_class=device_class
+    )
+
+
+def _catalog_descriptions(product_key: str) -> list[SydpowerBinarySensorDescription]:
+    """Build a description per catalog state, ports included."""
+    states = get_product_states(product_key)
+    if not states:
+        return []
+
+    by_id = {s["id"]: s for s in states if s.get("id")}
+    descriptions: list[SydpowerBinarySensorDescription] = []
+    seen: set[int] = set()
+
+    for state in states:
+        bit = state.get("input_index")
+        if bit is None:
+            continue
+
+        parent = by_id.get(state.get("parent_id", ""))
+        if parent is not None and parent.get("holding_index") == REG_LIGHT_CONTROL:
+            # The light's children are its modes, and their indices are register
+            # values rather than word bits — they collide with USB port bits.
+            continue
+        if bit in seen:
+            _LOGGER.debug(
+                "Skipping duplicate state bit %d (%s)", bit, state.get("function_name")
+            )
+            continue
+        seen.add(bit)
+
+        name = state.get("function_name") or f"Bit {bit}"
+        if parent is not None:
+            name = f"{parent.get('function_name', '')} {name}".strip()
+        descriptions.append(_describe(bit, name))
+
+    return _number_duplicates(descriptions)
+
+
+def _number_duplicates(
+    descriptions: list[SydpowerBinarySensorDescription],
+) -> list[SydpowerBinarySensorDescription]:
+    """
+    Number repeated names, e.g. three "PD 20W" ports become "PD 20W 1..3".
+
+    Several ports of the same kind share a name in the catalog. Left alone, Home
+    Assistant would disambiguate the entity ids with _2 and _3 suffixes while the
+    friendly names stayed identical, which is worse than numbering them.
+    """
+    counts: dict[str, int] = {}
+    for description in descriptions:
+        counts[description.name] = counts.get(description.name, 0) + 1
+
+    running: dict[str, int] = {}
+    result: list[SydpowerBinarySensorDescription] = []
+    for description in descriptions:
+        name = description.name
+        if counts[name] > 1:
+            running[name] = running.get(name, 0) + 1
+            name = f"{name} {running[name]}"
+        result.append(
+            SydpowerBinarySensorDescription(
+                key=description.key,
+                name=name,
+                bit=description.bit,
+                device_class=description.device_class,
+            )
+        )
+    return result
+
+
+def _fallback_descriptions() -> list[SydpowerBinarySensorDescription]:
+    """The four outputs, for products the catalog does not describe."""
+    return [
+        _describe(_HIGH_HALF + STATE_USB_BIT.bit_length() - 1, "USB output"),
+        _describe(_HIGH_HALF + STATE_DC_BIT.bit_length() - 1, "DC output"),
+        _describe(_HIGH_HALF + STATE_AC_BIT.bit_length() - 1, "AC output"),
+        _describe(_HIGH_HALF + STATE_LIGHT_BIT.bit_length() - 1, "Light"),
+    ]
 
 
 async def async_setup_entry(
@@ -85,9 +168,17 @@ async def async_setup_entry(
 ) -> None:
     """Set up Sydpower binary sensors from a config entry."""
     coordinator: SydpowerCoordinator = hass.data[DOMAIN][entry.entry_id]
+    product_key = entry.data.get(CONF_PRODUCT_KEY) or ""
+
+    descriptions = _catalog_descriptions(product_key)
+    if descriptions:
+        _LOGGER.debug("Built %d state sensor(s) from the catalog", len(descriptions))
+    else:
+        descriptions = _fallback_descriptions()
+        _LOGGER.debug("No catalog states for %r; using the four outputs", product_key)
+
     entities: list[BinarySensorEntity] = [
-        SydpowerBinarySensor(coordinator, entry, desc)
-        for desc in BINARY_SENSOR_DESCRIPTIONS
+        SydpowerBinarySensor(coordinator, entry, desc) for desc in descriptions
     ]
     entities.append(SydpowerConnectivitySensor(coordinator, entry))
     if get_faults():
@@ -96,7 +187,7 @@ async def async_setup_entry(
 
 
 class SydpowerBinarySensor(SydpowerEntity, BinarySensorEntity):
-    """A binary sensor reading one bit of the output state bitfield."""
+    """A binary sensor reading one bit of the combined state word."""
 
     entity_description: SydpowerBinarySensorDescription
 
@@ -109,19 +200,18 @@ class SydpowerBinarySensor(SydpowerEntity, BinarySensorEntity):
         super().__init__(coordinator, entry, description.key)
         self.entity_description = description
 
+    def _word(self) -> int | None:
+        data = self.coordinator.data
+        return None if data is None else state_word(data.input)
+
     @property
     def available(self) -> bool:
-        return (
-            super().available
-            and self._input(self.entity_description.register) is not None
-        )
+        return super().available and self._word() is not None
 
     @property
     def is_on(self) -> bool | None:
-        value = self._input(self.entity_description.register)
-        if value is None:
-            return None
-        return bool(value & self.entity_description.bit_mask)
+        word = self._word()
+        return None if word is None else bool(word >> self.entity_description.bit & 1)
 
 
 class SydpowerConnectivitySensor(SydpowerEntity, BinarySensorEntity):

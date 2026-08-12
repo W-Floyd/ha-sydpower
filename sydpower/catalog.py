@@ -129,6 +129,40 @@ def get_product_settings(product_key: str) -> list[dict]:
 # `DC_version`.
 PANEL_VERSION_REGISTER = 50
 
+# The app combines two input registers into one 32-bit state word: the first
+# supplies bits 0-15 and the second bits 16-31. A state's catalog `input_index`
+# is a bit position in that word, not a register number — which is why 25, 26, 27
+# and 28 are the USB, DC, AC and light outputs, being bits 9 to 12 of register 41.
+STATE_WORD_REGISTERS = (42, 41)
+
+
+def state_word(input_registers: list[int]) -> int | None:
+    """Combine the two state registers into the app's 32-bit status word."""
+    low, high = STATE_WORD_REGISTERS
+    if max(low, high) >= len(input_registers):
+        return None
+    return input_registers[low] | (input_registers[high] << 16)
+
+
+def get_product_states(product_key: str) -> list[dict]:
+    """
+    Return a product's state definitions, resolved from the shared table.
+
+    Each entry has a ``function_name`` and an ``input_index`` giving its bit in
+    :func:`state_word`. Entries with a ``parent_id`` are ports or modes belonging
+    to the output named by that parent.
+    """
+    catalog = _load()
+    product = catalog.get("products", {}).get(product_key)
+    if product is None:
+        return []
+    definitions = catalog.get("states", [])
+    return [
+        definitions[i]
+        for i in product.get("state_indexes", [])
+        if 0 <= i < len(definitions)
+    ]
+
 
 def gated_setting_options(
     setting: dict,

@@ -114,13 +114,22 @@ value][CRC]`, with the device echoing the request frame verbatim.
 
 Bits 9–12 form a contiguous USB / DC / AC / Light group.
 
-### `input[42]` is a bitfield, not a power reading
+### `input[41]` and `input[42]` are one 32-bit state word
 
-Reads `0x0000` with only AC output on, `0x03D8` with USB enabled, and `0xE3D8`
-with USB and DC enabled. Completely static under a live 19.8 W load across two
-separate sampling runs, so it is not a wattage. It relates to the USB/DC side
-only. `0x03D8` has exactly six bits set and this family exposes six USB ports,
-so a per-port mask is plausible but unproven.
+The app concatenates them: register 42 supplies bits 0-15 and register 41 bits
+16-31. The catalog's state `input_index` is a **bit position in that word**, not a
+register number, which is why indices 25, 26, 27 and 28 are the USB, DC, AC and
+light outputs — bits 9 to 12 of register 41.
+
+Register 42 is the per-port half. `0x03D8` with USB enabled is bits 3, 4, 6, 7, 8
+and 9: one per USB port, matching the catalog's six USB children exactly.
+
+Verified against measured snapshots for all 17 of this product's states — four
+outputs, six USB ports, three DC ports and the AC child — every one agreeing with
+the toggle behaviour observed on hardware.
+
+The light's mode children are the exception: their indices (1, 2, 3) are register
+27 *values*, not word bits, and collide with USB port bits.
 
 ### AC voltage and frequency
 
@@ -207,6 +216,12 @@ poll interval that is roughly a 10% duty cycle.
 
 - Whether DC/solar input appears in register 4, and how it enters the input
   power identity. Needs a panel or DC source connected.
+- `input[19]`, constant 600. Not read literally anywhere in the app.
+- Which of `input[18]` and `input[21]` is AC input versus output.
+- State-word bits 17, 19, 24, 29, 30 and 31, which drive the app's animations.
+- Expansion battery state of charge at `input[53]`, `[55]`, `[66]` and `[67]`:
+  zero when absent, otherwise permille with a 10 offset, per the app and the
+  earlier ESP-FBot integration. Untestable here without expansion packs.
 - Commanding register 26 (AC output) and register 56 (key sound). Every other
   allowlisted register has now been written successfully and read back.
 - Remaining USB port power registers; upstream lists 34, 36, 37 in addition to
