@@ -32,18 +32,24 @@ confirmed.
 
 ## Control registers (holding bank, FC 0x03 / write FC 0x06)
 
-All four are transition-confirmed and all four match upstream.
+All four are transition-confirmed and all four match upstream. Three have since
+been commanded successfully from Home Assistant.
 
-| Register | Function | Values | Upstream constant |
-| --- | --- | --- | --- |
-| 24 | USB output | 0 = off, 1 = on | `REG_USB_CONTROL` ✓ |
-| 25 | DC output | 0 = off, 1 = on | `REG_DC_CONTROL` ✓ |
-| 26 | AC output | 0 = off, 1 = on | `REG_AC_CONTROL` ✓ |
-| 27 | Light | 0 = off, 1 = on | `REG_LIGHT_CONTROL` ✓ |
+| Register | Function | Values | Upstream | Written? |
+| --- | --- | --- | --- | --- |
+| 24 | USB output | 0 = off, 1 = on | `REG_USB_CONTROL` ✓ | **yes** (0) |
+| 25 | DC output | 0 = off, 1 = on | `REG_DC_CONTROL` ✓ | **yes** (0) |
+| 26 | AC output | 0 = off, 1 = on | `REG_AC_CONTROL` ✓ | no |
+| 27 | Light / mode | 0 = off, 1 = on, 2 = SOS, 3 = flashing | `REG_LIGHT_CONTROL` ✓ | **yes** (all four) |
 
-Light modes 2 (SOS) and 3 (flashing) are in the allowlist range but untested.
+All four light modes were commanded from Home Assistant and observed taking
+effect on the device, so register 27 is fully verified across its allowlisted
+range of 0–3.
 
-A final read with USB on, DC on, AC on and light off returned
+Register 26 is the only control register never written: its mapping rests on
+observing a physical toggle, not on commanding one.
+
+A read with USB on, DC on, AC on and light off returned
 `holding[24,25,26,27] = 1, 1, 1, 0`, matching physical state exactly.
 
 ### Verified write
@@ -162,7 +168,8 @@ poll interval that is roughly a 10% duty cycle.
 ## Still unmapped
 
 - Quantity and scale for registers 6, 20, 39.
-- Light modes 2 (SOS) and 3 (flashing).
+- Commanding register 26 (AC output); every other control register has now been
+  written successfully.
 - Remaining USB port power registers; upstream lists 34, 36, 37 in addition to
   the confirmed 30, 31, 35.
 - Whether `input[18]` / `input[21]` are AC input vs output.
