@@ -13,6 +13,13 @@ own controls rather than the test device's. Alongside that, several registers we
 resolved against hardware — including the two AC voltages, which had been
 indistinguishable while mains was connected and the output enabled.
 
+The other theme is a correction. Several bounds in this integration had been taken
+from the app's sliders and option lists, on the reasoning that the app would not
+offer a setting the device could not take. The converse does not follow, and
+treating it as though it did cost a charge ceiling that was in real use. Ranges are
+now justified by what the hardware accepts, and where a bound is only the app's it
+says so.
+
 **Entity unique IDs changed.** State entities are now keyed on the catalog's own
 identifier instead of a hardcoded list, and the AC frequency sensor was renamed to
 `ac_input_frequency`. Remove and re-add the device; the old entities are orphaned
@@ -48,9 +55,16 @@ and will show as unavailable until they are deleted.
 ### Fixed
 - **The charge threshold accepts 10-100% again.** It had been narrowed to 60-100%
   to match the app's slider, which removed a setting that works: the hardware
-  accepts and holds a ceiling of 100 permille, and a ceiling that low is how you
-  hold charging off through a high-tariff period from an automation. The app's
-  floor is a product decision rather than a device limit.
+  accepts and holds a ceiling of 100 permille, and a ceiling that low is how
+  charging is held off through a high-tariff period from an automation. The app's
+  floor is a product decision rather than a device limit. The bound is now asserted
+  in a test so it cannot be narrowed again without the reason being stated, and the
+  entity's minimum drops to 10% to match.
+
+  Register 66, the discharge floor, takes its 0-50% range from the same slider and
+  may well go higher on the hardware. It is left alone for now — it is one of the
+  persisted registers implicated in the boot loop, so widening it wants a
+  deliberate test rather than an assumption in the other direction.
 - **Two switches were wrongly removed** as unverified. Key sound (register 56) and
   AC silent charging (register 57) are both written by the app; the catalog simply
   does not describe them, which is not the same as the device not having them.
@@ -61,15 +75,30 @@ and will show as unavailable until they are deleted.
   the requirement.
 
 ### Changed
+- **`input_index` is a state-word bit, retracting what 0.3.7 said about it.** That
+  release described it as "a sub-index within its parent, not a register number"
+  and dropped the catalog section carrying it. Half of that was right: read as
+  input-register numbers these values do produce wildly wrong readings, which is
+  what prompted the claim. But they are bit positions in the combined 32-bit state
+  word — input register 42 as the low half, 41 as the high — and read that way all
+  17 states of the test device validate. This is what makes deriving binary sensors
+  and ports from the catalog possible at all.
 - **State sensors are diagnostic only where a control already writes the same
   thing**, derived from the catalog rather than from a maintained register list.
 - **Registers 18 and 21 are now distinguished**: 21 is the mains input, 18 the
   inverter output, and the output reading is suppressed while the output is off
   rather than recording the 70 V swing an unenergised output samples as.
 - **Register 22 is AC *input* frequency**, confirmed by it reading 0.00 Hz while
-  the inverter ran from the battery at 120.7 V.
-- **Register 19 is not a frequency measurement.** It held 600 with no mains and
-  again with the inverter stopped, where a live reading falls to zero.
+  the inverter ran from the battery at 120.7 V, and renamed accordingly. It is
+  deliberately left ungated: 0 Hz beside register 21's 0 V reports "no mains"
+  accurately, unlike the floating output voltage that gating exists to hide.
+- **Register 19 is not a frequency measurement**, and gets no entity. It held
+  exactly 600 with no mains and again with the inverter stopped, where a live
+  reading falls to zero as register 22 does. A nominal 60.0 Hz is the best reading
+  of the value, and `holding[18]` carrying 115 makes a 115 V/60 Hz nominal pair,
+  but nothing makes it *settable*: the app contains no `Hz` string and no frequency
+  setting for any of its 169 products, and no holding register holds 50, 60 or 600.
+  A 50/60 Hz mode, if one exists, is not reachable from anything documented.
 
 ## [0.3.7] - 2026-08-12
 
