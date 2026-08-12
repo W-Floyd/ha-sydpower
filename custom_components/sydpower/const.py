@@ -15,16 +15,16 @@ CONF_PROTOCOL_VERSION = "protocol_version"
 POLL_INTERVAL = 30
 
 # ── Control registers (holding bank) ──────────────────────────────────────────
-# Registers 24, 25, 26 and 27 are transition-confirmed on a protocol v0 device
-# and match upstream's v1 constants; 27 is additionally write-verified.
-# See docs/register-map-v0.md. Every write goes through the library's
-# WRITABLE_HOLDING_REGISTERS allowlist, which is the authority on valid ranges.
-REG_USB_CONTROL = 24
-REG_DC_CONTROL = 25
-REG_AC_CONTROL = 26
+# Only the registers the integration must name explicitly. Output controls are no
+# longer listed here: switches and state sensors are derived from the catalog,
+# which carries each output's control register. See docs/register-map-v0.md for
+# the full map, and the library's WRITABLE_HOLDING_REGISTERS for valid ranges.
+#
+# The light stays named because the catalog cannot express what makes it special:
+# its register holds a mode, and its children are values rather than state bits.
+# The thresholds stay because the catalog does not describe them at all, yet
+# writing them and reading the values back was verified on hardware.
 REG_LIGHT_CONTROL = 27
-REG_KEY_SOUND = 56
-REG_AC_SILENT_CONTROL = 57
 REG_THRESHOLD_DISCHARGE = 66
 REG_THRESHOLD_CHARGE = 67
 
