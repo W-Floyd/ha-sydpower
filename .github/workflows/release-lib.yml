@@ -1,0 +1,90 @@
+name: Build and publish sydpower wheel
+
+# The Home Assistant integration pins its `sydpower` requirement to a release
+# asset URL (see custom_components/sydpower/manifest.json), so every library
+# version needs a wheel attached to a matching `lib-v*` release.
+on:
+  push:
+    tags:
+      - "lib-v*"
+  # Allows building a wheel without tagging, to check packaging in isolation.
+  workflow_dispatch:
+
+permissions:
+  contents: write # required to attach the wheel to the release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build pytest pytest-asyncio
+
+      - name: Run tests
+        working-directory: sydpower
+        run: python -m pytest tests/ -q
+
+      - name: Build wheel
+        working-directory: sydpower
+        run: python -m build --wheel --outdir dist
+
+      - name: Verify the tag matches the packaged version
+        if: startsWith(github.ref, 'refs/tags/lib-v')
+        working-directory: sydpower
+        run: |
+          tag_version="${GITHUB_REF_NAME#lib-v}"
+          wheel=$(ls dist/*.whl)
+          echo "tag: $tag_version"
+          echo "wheel: $wheel"
+          # A tag that disagrees with pyproject.toml would publish an asset whose
+          # filename does not match the URL the manifest pins.
+          case "$wheel" in
+            dist/sydpower-"$tag_version"-*.whl) echo "version matches" ;;
+            *) echo "::error::tag $tag_version does not match built wheel $wheel"; exit 1 ;;
+          esac
+
+      - name: Verify the wheel installs and imports
+        working-directory: sydpower
+        run: |
+          python -m venv /tmp/verify
+          /tmp/verify/bin/pip install --quiet dist/*.whl
+          # Run outside the source tree so the installed package is imported
+          # rather than the working directory.
+          cd /tmp && /tmp/verify/bin/python -c "
+          import inspect
+          from sydpower import SydpowerDevice, WRITABLE_HOLDING_REGISTERS
+          from sydpower.catalog import get_device_params
+          params = inspect.signature(SydpowerDevice.__init__).parameters
+          assert 'client_factory' in params, 'client_factory missing'
+          assert WRITABLE_HOLDING_REGISTERS, 'write allowlist empty'
+          # product_catalog.json is package data; a wheel built without it would
+          # silently fall back to wrong Modbus defaults.
+          assert get_device_params(
+              '00004380-0000-1000-8000-00805F9B34FB_POWER-8043'
+          ), 'product catalog missing from wheel'
+          print('wheel verified')
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sydpower-wheel
+          path: sydpower/dist/*.whl
+
+      - name: Attach wheel to the release
+        if: startsWith(github.ref, 'refs/tags/lib-v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create the release if the tag was pushed without one; otherwise just
+          # upload, replacing any asset of the same name.
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+                 --title "sydpower ${GITHUB_REF_NAME#lib-v}" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" sydpower/dist/*.whl \
+            --repo "$GITHUB_REPOSITORY" --clobber
