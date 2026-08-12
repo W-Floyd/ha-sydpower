@@ -227,19 +227,68 @@ device's own display alongside a register dump: the screen showed 628 W input,
 | --- | --- | --- |
 | 3 | Power into the battery (charging) | W |
 | 4 | DC / solar input power | W — confirmed, see below |
-| 6 | Total input power | W |
+| 6 | Total input power — **derived as 39 + 3**, see below | W |
 | 20 | Byte-identical to 39 in every sample | W |
-| 39 | Output power | W |
+| 39 | Output power — **~130 W low while charging**, see below | W |
 | 58 | Time until full | minutes |
 | 59 | Remaining discharge runtime | minutes — 0 while charging |
 
-The device's accounting is internally consistent, with this identity holding in
-every sample including those taken while not charging:
+This identity holds in every sample, including those taken while not charging:
 
 ```
 input[6] = input[39] + input[3]        613 = 365 + 248
                                        512 = 512 +   0   (idle, not charging)
 ```
+
+**Register 6 is derived from the other two, not measured.** It holds even at
+`497 = 497 + 0`, where a real input measurement must exceed output by the
+conversion losses. So register 6 carries no information of its own, can never show
+those losses, and inherits any error in register 39. An earlier version of this
+document read the identity as evidence the device's accounting was trustworthy; it
+is only evidence that the device does this one subtraction consistently.
+
+### Register 39 under-reports output while charging
+
+Confirmed against two independent external instruments — a plug meter on the wall
+socket and a UPS reporting its own real power over NUT. Charging was stopped
+mid-test by lowering the ceiling in holding 67 below the current state of charge,
+with nothing else altered:
+
+```
+   SOC    [6]in  [39]out  [3]chg     true load (UPS)
+ 95.7%      608      358     249     ~490 W
+ 95.7%      587      359     228     ~490 W
+ 95.7%      497      497       0     ~490 W   <- charging stopped
+ 95.7%      509      506       0     ~490 W
+ 95.7%      495      495       0     ~490 W
+```
+
+The load never changed, yet register 39 jumped from ~358 W to ~497 W the moment
+charging ceased. So:
+
+* **In pass-through, register 39 is accurate** — within 1.5% of the UPS's figure.
+* **While charging, register 39 reads about 130 W low**, and register 6 is low by
+  the same amount because it is derived from it.
+* **Register 3 is accurate**: its 249 W matches the 254 W obtained independently as
+  plug-minus-UPS.
+
+The true balance, from the instruments rather than the device:
+
+```
+737 W at the wall  =  490 W load  +  249 W charging
+608 W claimed      =  358 W out   +  249 W charging     both terms ~130 W short
+```
+
+Whether the ~130 W is a fixed offset or scales with charge power is **unresolved**:
+both charging samples sat at 228-249 W, too close together to distinguish, and the
+offset was ~130 W in each, which only hints at fixed. Changing the AC charge power
+in holding 13 to a different option and re-raising the ceiling would settle it in
+one poll.
+
+A plausible mechanism, untested: with the mains connected the unit may serve part
+of the load through its bypass relay and part through the inverter, register 39
+counting only the inverter's share. That would make the error depend on the load
+split rather than on charge power, and so not calibratable by any fixed rule.
 
 Register 4 carries DC/solar input, confirmed once solar was actually producing
 with the mains disconnected. It had read 0 in every earlier sample simply because
@@ -268,9 +317,16 @@ term or via register 3.
 Register 4's number comes from the earlier ESP-FBot integration, whose other power
 indices (3, 6, 20, 39) all proved correct here — and now 4 has too.
 
-Note that the absolute figures are reportedly higher than an external meter
-shows. That is the device's own inaccuracy — the registers match its display
-exactly, so there is no scaling error to correct on this side.
+An earlier note here said the absolute figures run *higher* than an external meter
+shows, inherited from upstream rather than measured. Locally the opposite is true
+and by a large margin: while charging, output and total input both read ~130 W
+**lower** than the wall meter and the load's own reporting agree on. See the
+section above.
+
+The registers do match the device's display exactly, so there is no scaling error
+on this side — but note that the display is therefore not independent
+corroboration. It reads the same registers, so "the screen says it too" adds no
+evidence.
 
 An earlier revision of this document guessed 6/20/39 were a ÷10 pack voltage,
 on the strength of their tracking each other and sitting in a plausible range
