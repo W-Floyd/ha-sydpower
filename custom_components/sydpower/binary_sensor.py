@@ -67,15 +67,6 @@ _LOGGER = logging.getLogger(__name__)
 # Register 41 occupies the word's high half, so its bit 9 is word bit 25.
 _HIGH_HALF = 16
 
-# Stable keys for the four outputs, so entity ids survive these becoming
-# catalog-derived rather than hardcoded.
-STABLE_KEYS: dict[int, tuple[str, BinarySensorDeviceClass]] = {
-    _HIGH_HALF + STATE_USB_BIT.bit_length() - 1: ("usb_active", BinarySensorDeviceClass.POWER),
-    _HIGH_HALF + STATE_DC_BIT.bit_length() - 1: ("dc_active", BinarySensorDeviceClass.POWER),
-    _HIGH_HALF + STATE_AC_BIT.bit_length() - 1: ("ac_active", BinarySensorDeviceClass.POWER),
-    _HIGH_HALF + STATE_LIGHT_BIT.bit_length() - 1: ("light_active", BinarySensorDeviceClass.LIGHT),
-}
-
 
 @dataclass(frozen=True, kw_only=True)
 class SydpowerBinarySensorDescription(BinarySensorEntityDescription):
@@ -85,11 +76,13 @@ class SydpowerBinarySensorDescription(BinarySensorEntityDescription):
 
 
 def _describe(
-    bit: int, name: str, *, diagnostic: bool = False
+    key: str,
+    bit: int,
+    name: str,
+    *,
+    diagnostic: bool = False,
+    device_class: BinarySensorDeviceClass = BinarySensorDeviceClass.POWER,
 ) -> SydpowerBinarySensorDescription:
-    key, device_class = STABLE_KEYS.get(
-        bit, (f"state_{bit}", BinarySensorDeviceClass.POWER)
-    )
     return SydpowerBinarySensorDescription(
         key=key,
         name=name,
@@ -135,7 +128,23 @@ def _catalog_descriptions(product_key: str) -> list[SydpowerBinarySensorDescript
         # view of which port is live — so they stay primary. Read from the catalog
         # rather than a list of registers kept in step by hand.
         diagnostic = "holding_index" in state
-        descriptions.append(_describe(bit, name, diagnostic=diagnostic))
+        descriptions.append(
+            _describe(
+                # The catalog's own identifier for this state: stable across
+                # refreshes, unique per product, and nothing to maintain here.
+                # Entity ids come from the name, so this only has to be stable,
+                # not readable.
+                state["id"],
+                bit,
+                name,
+                diagnostic=diagnostic,
+                device_class=(
+                    BinarySensorDeviceClass.LIGHT
+                    if state.get("holding_index") == REG_LIGHT_CONTROL
+                    else BinarySensorDeviceClass.POWER
+                ),
+            )
+        )
 
     return _number_duplicates(descriptions)
 
@@ -177,13 +186,33 @@ def _fallback_descriptions() -> list[SydpowerBinarySensorDescription]:
     """
     The four outputs, for products the catalog does not describe.
 
-    All four mirror a control, so all four are diagnostic.
+    All four mirror a control, so all four are diagnostic. Keys are derived from
+    the bit rather than the catalog, there being no catalog entry to key on.
     """
     return [
-        _describe(_HIGH_HALF + STATE_USB_BIT.bit_length() - 1, "USB output", diagnostic=True),
-        _describe(_HIGH_HALF + STATE_DC_BIT.bit_length() - 1, "DC output", diagnostic=True),
-        _describe(_HIGH_HALF + STATE_AC_BIT.bit_length() - 1, "AC output", diagnostic=True),
-        _describe(_HIGH_HALF + STATE_LIGHT_BIT.bit_length() - 1, "Light", diagnostic=True),
+        _describe(f"state_{bit}", bit, name, diagnostic=True, device_class=device_class)
+        for bit, name, device_class in (
+            (
+                _HIGH_HALF + STATE_USB_BIT.bit_length() - 1,
+                "USB output",
+                BinarySensorDeviceClass.POWER,
+            ),
+            (
+                _HIGH_HALF + STATE_DC_BIT.bit_length() - 1,
+                "DC output",
+                BinarySensorDeviceClass.POWER,
+            ),
+            (
+                _HIGH_HALF + STATE_AC_BIT.bit_length() - 1,
+                "AC output",
+                BinarySensorDeviceClass.POWER,
+            ),
+            (
+                _HIGH_HALF + STATE_LIGHT_BIT.bit_length() - 1,
+                "Light",
+                BinarySensorDeviceClass.LIGHT,
+            ),
+        )
     ]
 
 
