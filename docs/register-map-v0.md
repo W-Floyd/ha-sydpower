@@ -46,8 +46,26 @@ All four light modes were commanded from Home Assistant and observed taking
 effect on the device, so register 27 is fully verified across its allowlisted
 range of 0–3.
 
-Register 26 is the only control register never written: its mapping rests on
-observing a physical toggle, not on commanding one.
+Register 26 is the only output-control register never written: its mapping rests
+on observing a physical toggle, not on commanding one.
+
+### Settings registers
+
+Also commanded from Home Assistant and confirmed by reading back, which matters
+because these are the persisted registers implicated in the boot loop:
+
+| Register | Function | Written | Read back |
+| --- | --- | --- | --- |
+| 13 | AC charge limit (charge speed) | 2 | 2 → 500 W |
+| 57 | AC silent charging | 0 | 0 (off) |
+| 66 | Discharge floor, permille | 100 | 100 (10.0%) |
+| 67 | Charge ceiling, permille | 830, then 1000 | 1000 (100.0%) |
+
+Register 67 accepted 830 as readily as 1000, so the charge ceiling is not
+restricted to round figures. Register **56 (key sound) has never been written**.
+
+The AC charge limit is 1-based: option index + 1 goes to the register, so 2
+selects the second option. Confirmed against the device reporting 500 W.
 
 A read with USB on, DC on, AC on and light off returned
 `holding[24,25,26,27] = 1, 1, 1, 0`, matching physical state exactly.
@@ -168,8 +186,8 @@ poll interval that is roughly a 10% duty cycle.
 ## Still unmapped
 
 - Quantity and scale for registers 6, 20, 39.
-- Commanding register 26 (AC output); every other control register has now been
-  written successfully.
+- Commanding register 26 (AC output) and register 56 (key sound). Every other
+  allowlisted register has now been written successfully and read back.
 - Remaining USB port power registers; upstream lists 34, 36, 37 in addition to
   the confirmed 30, 31, 35.
 - Whether `input[18]` / `input[21]` are AC input vs output.
