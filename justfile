@@ -222,8 +222,31 @@ release-now level="patch":
 # config entry does NOT pick up code changes — the core has to restart. That is
 # why every deploy recipe here restarts it.
 
+# Refuse to deploy a manifest whose pinned wheel is not downloadable yet.
+[private]
+_check_pin_resolves:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    url=$({{python}} -c "
+    import json
+    m = json.load(open('{{justfile_directory()}}/{{manifest}}'))
+    print(next(r.split(' @ ')[1] for r in m['requirements'] if r.startswith('sydpower @')))
+    ")
+    code=$(curl -sILo /dev/null -w '%{http_code}' "$url" || echo 000)
+    if [ "$code" != "200" ]; then
+        echo "the manifest pins a wheel that is not downloadable (HTTP $code):" >&2
+        echo "  $url" >&2
+        echo "" >&2
+        echo "Home Assistant installs this at startup, so deploying now would leave" >&2
+        echo "the integration failing with 'Requirements not found'. If a release was" >&2
+        echo "just tagged, CI may still be uploading the asset — wait and retry:" >&2
+        echo "  gh run watch --repo {{repo}}" >&2
+        exit 1
+    fi
+    echo "manifest pin resolves (HTTP 200)"
+
 # Copy the integration to HAOS and restart the core. For integration-only edits.
-deploy:
+deploy: _check_pin_resolves
     #!/usr/bin/env bash
     set -euo pipefail
     src="{{justfile_directory()}}/custom_components/sydpower/"
