@@ -23,8 +23,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install build tooling
-        run: python -m pip install --upgrade pip build pytest pytest-asyncio
+      - name: Install build and test tooling
+        # bleak is a runtime dependency imported at module load, so the tests
+        # cannot even be collected without it.
+        run: python -m pip install --upgrade pip build pytest pytest-asyncio "bleak>=1.0.0"
 
       - name: Run tests
         working-directory: sydpower
