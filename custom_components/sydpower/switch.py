@@ -8,13 +8,13 @@ than only the device it was developed against.
 The light is excluded. Its register holds a mode rather than a boolean, so it is a
 light entity with effects — see light.py.
 
-Two switches earlier versions offered are deliberately gone. Key sound (register
-56) and AC silent charging (register 57) came from upstream's hardcoded constants
-and appear nowhere in the catalog, for any of its 169 products. Neither was ever
-verified here either: 56 was never written, and 57 was written to 0 while it
-already read 0, which demonstrates nothing. The charge and discharge thresholds
-are likewise absent from the catalog but are kept, in number.py, because writing
-them and reading the values back was verified on hardware.
+Two controls are added on top of the catalog, which describes them for no product.
+The app hardcodes them just as it hardcodes the charge and discharge thresholds, so
+being absent from the catalog does not mean absent from the device — it means the
+catalog is not the whole story. Both were traced in the app rather than inherited
+on trust: register 56 is written by a toggle on the setting page labelled
+device.key-sound, and register 57 is bound as a form control over the holding bank
+labelled device.silent-charging.
 """
 
 from __future__ import annotations
@@ -28,13 +28,20 @@ from homeassistant.components.switch import (
     SwitchEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from sydpower.catalog import get_product_states
 from sydpower.constants import WRITABLE_HOLDING_REGISTERS
 
-from .const import CONF_PRODUCT_KEY, DOMAIN, REG_LIGHT_CONTROL
+from .const import (
+    CONF_PRODUCT_KEY,
+    DOMAIN,
+    REG_AC_SILENT_CONTROL,
+    REG_KEY_SOUND,
+    REG_LIGHT_CONTROL,
+)
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
 
@@ -48,8 +55,16 @@ class SydpowerSwitchDescription(SwitchEntityDescription):
     register: int
 
 
+# Controls the app hardcodes and the catalog omits. Keyed by register, since there
+# is no catalog entry to key on.
+EXTRA_SWITCHES: tuple[tuple[int, str], ...] = (
+    (REG_KEY_SOUND, "Key sound"),
+    (REG_AC_SILENT_CONTROL, "AC silent charging"),
+)
+
+
 def _descriptions(product_key: str) -> list[SydpowerSwitchDescription]:
-    """Build a switch per catalog output that has a control register."""
+    """Build a switch per catalog output, plus the app's hardcoded extras."""
     descriptions: list[SydpowerSwitchDescription] = []
 
     for state in get_product_states(product_key):
@@ -77,6 +92,23 @@ def _descriptions(product_key: str) -> list[SydpowerSwitchDescription]:
                 name=state.get("function_name") or f"Register {register}",
                 register=register,
                 device_class=SwitchDeviceClass.OUTLET,
+            )
+        )
+
+    known = {d.register for d in descriptions}
+    for register, name in EXTRA_SWITCHES:
+        # Skip if the catalog ever starts describing one of these, so the same
+        # control is never offered twice.
+        if register in known or register not in WRITABLE_HOLDING_REGISTERS:
+            continue
+        descriptions.append(
+            SydpowerSwitchDescription(
+                key=f"register_{register}",
+                name=name,
+                register=register,
+                # Not an outlet: these configure the unit rather than switch power.
+                device_class=SwitchDeviceClass.SWITCH,
+                entity_category=EntityCategory.CONFIG,
             )
         )
 

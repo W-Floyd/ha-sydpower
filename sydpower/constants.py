@@ -84,7 +84,9 @@ WRITABLE_HOLDING_REGISTERS: dict[int, tuple[int, int]] = {
     56: (0, 1),      # Key sound on/off
     57: (0, 1),      # AC silent charging on/off
     66: (0, 500),    # Discharge lower limit, permille (0-50.0%)
-    67: (100, 1000), # Charge upper limit, permille (10.0-100.0%)
+    67: (600, 1000), # Charge upper limit, permille (60.0-100.0%). The app's
+                     # slider is min 600 max 1000 step 10; permitting less
+                     # would allow a setting it never offers.
     # Settings described by the product catalog. Ranges span the app's own option
     # lists after the encoding above is applied, so nothing outside what the app
     # itself would write is permitted.

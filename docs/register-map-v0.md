@@ -61,6 +61,27 @@ because these are the persisted registers implicated in the boot loop:
 | 66 | Discharge floor, permille | 100 | 100 (10.0%) |
 | 67 | Charge ceiling, permille | 830, then 1000 | 1000 (100.0%) |
 
+The catalog describes **neither** register, for any of its 169 products, yet the app
+sets both — on its energy-management page, writing register 66 and 67 directly.
+Its sliders give the real bounds:
+
+| Register | Slider | Range |
+| --- | --- | --- |
+| 66 | min 0, max 500, step 10 | discharge floor, 0-50% |
+| 67 | **min 600**, max 1000, step 10 | charge ceiling, **60-100%** |
+
+Permille is confirmed by the app's own display expression,
+`percentageFilter(value / 500 / 2)`, i.e. value / 1000. Note the charge ceiling
+cannot go below 60%: an earlier version of this integration offered 10%, a setting
+the app never permits.
+
+Registers 56 and 57 are likewise absent from the catalog but real: the app writes
+56 from a toggle labelled `device.key-sound`, and binds holding 57 as a form
+control labelled `device.silent-charging`.
+
+**The catalog is not the whole story.** Several controls are hardcoded in the app,
+so absence from the catalog is not evidence a register does nothing.
+
 Register 67 accepted 830 as readily as 1000, so the charge ceiling is not
 restricted to round figures. Register **56 (key sound) has never been written**.
 
@@ -217,6 +238,22 @@ connection open for responsiveness, keep this failure mode in mind.
 Full connect → read both banks → disconnect cycles, measured over 5 runs on a
 local macOS adapter: **median 2.99 s, max 3.71 s, 5/5 successful**. At a 30 s
 poll interval that is roughly a 10% duty cycle.
+
+## Known but not implemented
+
+| Register | Function | Evidence |
+| --- | --- | --- |
+| 63 | SOC calibration trigger | App writes 0, then polls input registers for 15 s under a `soc-setting` label |
+| 64 | Remote shutdown | App writes 1 behind a confirmation modal, labelled `device.remote-shutdown` |
+
+Both are momentary actions rather than states, so they belong as button entities.
+Neither is exposed, and register 64 in particular powers the unit down.
+
+The app also **refuses to enable an output** when the average pack state of charge
+is below the discharge floor in holding 66, showing `device.tip-1` instead. It
+averages the master state of charge at input 56 with the expansion packs at input
+53, 55, 66 and 67 — though its own chain of `else if`s means only the first
+expansion pack ever counts.
 
 ## Still unmapped
 

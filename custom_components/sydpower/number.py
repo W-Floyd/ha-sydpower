@@ -40,7 +40,8 @@ NUMBER_DESCRIPTIONS: tuple[SydpowerNumberDescription, ...] = (
         key="threshold_charge",
         name="Charge threshold",
         native_unit_of_measurement=PERCENTAGE,
-        native_min_value=10.0,
+        # The app's slider is min 600, max 1000, step 10 in permille.
+        native_min_value=60.0,
         native_max_value=100.0,
         native_step=1.0,
         mode=NumberMode.BOX,
@@ -50,6 +51,7 @@ NUMBER_DESCRIPTIONS: tuple[SydpowerNumberDescription, ...] = (
         key="threshold_discharge",
         name="Discharge threshold",
         native_unit_of_measurement=PERCENTAGE,
+        # The app's slider is min 0, max 500, step 10 in permille.
         native_min_value=0.0,
         native_max_value=50.0,
         native_step=1.0,

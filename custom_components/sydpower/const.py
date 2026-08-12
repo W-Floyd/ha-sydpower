@@ -28,6 +28,14 @@ REG_LIGHT_CONTROL = 27
 REG_THRESHOLD_DISCHARGE = 66
 REG_THRESHOLD_CHARGE = 67
 
+# Controls the app itself hardcodes, absent from the catalog for every product.
+# Evidenced in the beautified bundle rather than inherited on trust:
+#   56  a toggle written by the setting page, labelled device.key-sound
+#   57  bound as a form control over the holding bank, labelled
+#       device.silent-charging, which is rendered in three places
+REG_KEY_SOUND = 56
+REG_AC_SILENT_CONTROL = 57
+
 # ── Output state bits in input register 41 ────────────────────────────────────
 # Confirmed empirically by toggling each output in isolation.
 STATE_REGISTER = 41
