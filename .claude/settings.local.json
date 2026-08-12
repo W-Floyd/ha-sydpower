@@ -15,7 +15,8 @@
       "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/components/switchbot/sensor.py\")",
       "Bash(wget -q -O - \"https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/helpers/debounce.py\")",
       "WebFetch(domain:test.pypi.org)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Read(//Users/william/Documents/Personal/git/ESP-FBot/custom_components/fbot/**)"
     ]
   }
 }

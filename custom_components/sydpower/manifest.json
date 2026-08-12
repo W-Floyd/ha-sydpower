@@ -616,7 +616,7 @@
   "loggers": ["custom_components.sydpower"],
   "requirements": [
     "bleak-retry-connector>=3.6.0",
-    "sydpower @ https://github.com/W-Floyd/ha-sydpower/releases/download/lib-v0.3.4/sydpower-0.3.4-py3-none-any.whl"
+    "sydpower @ https://github.com/W-Floyd/ha-sydpower/releases/download/v0.3.5/sydpower-0.3.5-py3-none-any.whl"
   ],
-  "version": "0.2.0"
+  "version": "0.3.5"
 }

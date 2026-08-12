@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-08-11
+
+### Changed
+- Version aligned with the Home Assistant integration so both ship under a
+  single `v*` tag. There are no library changes since 0.3.4; the release exists
+  to give the integration's requirement pin an asset on the same tag it is
+  distributed from.
+
 ## [0.3.4] - 2026-08-11
 
 ### Fixed

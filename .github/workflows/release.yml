@@ -1,12 +1,13 @@
 name: Build and publish sydpower wheel
 
-# The Home Assistant integration pins its `sydpower` requirement to a release
-# asset URL (see custom_components/sydpower/manifest.json), so every library
-# version needs a wheel attached to a matching `lib-v*` release.
+# The library and the Home Assistant integration share one version and one tag.
+# The integration pins its `sydpower` requirement to an asset on the same `v*`
+# release it is distributed from (see custom_components/sydpower/manifest.json),
+# so the wheel must be attached to that release for HACS installs to resolve.
 on:
   push:
     tags:
-      - "lib-v*"
+      - "v*"
   # Allows building a wheel without tagging, to check packaging in isolation.
   workflow_dispatch:
 
@@ -37,10 +38,10 @@ jobs:
         run: python -m build --wheel --outdir dist
 
       - name: Verify the tag matches the packaged version
-        if: startsWith(github.ref, 'refs/tags/lib-v')
+        if: startsWith(github.ref, 'refs/tags/v')
         working-directory: sydpower
         run: |
-          tag_version="${GITHUB_REF_NAME#lib-v}"
+          tag_version="${GITHUB_REF_NAME#v}"
           wheel=$(ls dist/*.whl)
           echo "tag: $tag_version"
           echo "wheel: $wheel"
@@ -50,6 +51,32 @@ jobs:
             dist/sydpower-"$tag_version"-*.whl) echo "version matches" ;;
             *) echo "::error::tag $tag_version does not match built wheel $wheel"; exit 1 ;;
           esac
+
+      - name: Verify the integration manifest agrees with the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          # The manifest pins its sydpower requirement to an asset on this same
+          # tag. If either the pin or the manifest version drifts, HACS installs
+          # a snapshot whose requirement URL 404s or resolves to the wrong wheel.
+          python - "$GITHUB_REF_NAME" <<'PY'
+          import json, sys
+          tag = sys.argv[1]
+          version = tag.removeprefix("v")
+          m = json.load(open("custom_components/sydpower/manifest.json"))
+          errors = []
+          if m["version"] != version:
+              errors.append(f'manifest version {m["version"]!r} != tag version {version!r}')
+          pin = next((r for r in m["requirements"] if r.startswith("sydpower @")), None)
+          if pin is None:
+              errors.append("no sydpower requirement pin found")
+          else:
+              expected = f"/releases/download/{tag}/sydpower-{version}-py3-none-any.whl"
+              if not pin.endswith(expected):
+                  errors.append(f"pin does not reference {expected}\n  pin: {pin}")
+          for e in errors:
+              print(f"::error::{e}")
+          sys.exit(1 if errors else 0)
+          PY
 
       - name: Verify the wheel installs and imports
         working-directory: sydpower
@@ -79,7 +106,7 @@ jobs:
           path: sydpower/dist/*.whl
 
       - name: Attach wheel to the release
-        if: startsWith(github.ref, 'refs/tags/lib-v')
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -87,6 +114,6 @@ jobs:
           # upload, replacing any asset of the same name.
           gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
-                 --title "sydpower ${GITHUB_REF_NAME#lib-v}" --generate-notes
+                 --title "$GITHUB_REF_NAME" --generate-notes
           gh release upload "$GITHUB_REF_NAME" sydpower/dist/*.whl \
             --repo "$GITHUB_REPOSITORY" --clobber
