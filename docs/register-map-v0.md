@@ -260,9 +260,27 @@ An earlier revision of this document called register 63 a state-of-charge
 calibration. That was wrong, read from a reused `soc-setting-1` sleep label on the
 page; the page is `booking-charging`.
 
-Cancelling a schedule and remote shutdown are exposed as buttons. Setting a
-schedule is not: a delay in minutes derived from a wall-clock time suits a service
-or datetime entity rather than any of the platforms here.
+### The schedule is one-shot
+
+It does not repeat. Four things establish that:
+
+1. The register stores a **delay**, not a time of day, and a delay cannot recur.
+2. The countdown in input 57 decrements toward zero and is then spent.
+3. Its ceiling is 1440 minutes — exactly one day — so it can only ever address the
+   next occurrence.
+4. The page has no recurrence control. Its whole vocabulary is four strings: title,
+   start booking, cancel reservation, and schedule remaining charging time.
+   Repeat-cycle strings exist in the app but belong to the balcony-PV family, which
+   is a different page and a different register space.
+
+So "every morning at six" is not something the device does. Re-arming it daily is
+the caller's job — an automation writing the delay each day would do it.
+
+Cancelling a schedule and remote shutdown are exposed as buttons. Setting one is
+not: a delay in minutes derived from a wall-clock time suits a service or datetime
+entity rather than any of the platforms here. Note that the same page also carries
+the silent-charging toggle and the charging-power settings, which is corroborating
+evidence for holding 57 being silent charging.
 
 The app also **refuses to enable an output** when the average pack state of charge
 is below the discharge floor in holding 66, showing `device.tip-1` instead. It
