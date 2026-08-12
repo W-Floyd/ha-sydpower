@@ -5,8 +5,9 @@ Two momentary actions the app performs, neither described by the catalog:
 
 * Cancelling scheduled charging, by writing 0 to the delay register.
 * Remote shutdown, by writing 1. **This powers the unit down**, and the app puts a
-  confirmation dialog in front of it. Home Assistant has no equivalent for a
-  button press, so treat it accordingly when placing it on a dashboard.
+  confirmation dialog in front of it. Home Assistant has no equivalent for a button
+  press, so this one ships disabled and has to be enabled in the entity settings
+  before it appears.
 
 Setting a schedule is not offered. The register takes a delay in minutes that the
 app derives from a requested time of day, wrapping midnight, which is a poor fit
@@ -55,6 +56,11 @@ BUTTON_DESCRIPTIONS: tuple[SydpowerButtonDescription, ...] = (
         name="Remote shutdown",
         register=REG_REMOTE_SHUTDOWN,
         value=1,
+        # Disabled until deliberately enabled. Home Assistant has no confirmation
+        # for a button press where the app puts a dialog in front of this, and a
+        # dashboard button is one tap away from powering down whatever the unit is
+        # running. Enable it in the entity settings to use it.
+        entity_registry_enabled_default=False,
     ),
 )
 
