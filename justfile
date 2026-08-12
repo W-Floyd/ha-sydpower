@@ -16,6 +16,14 @@
 set shell := ["bash", "-uc"]
 
 repo := "W-Floyd/ha-sydpower"
+
+# SSH target for the Home Assistant OS box, for the deploy recipes.
+# Override per invocation (`just haos_host=ha.local deploy`) or in the
+# environment (`export HAOS_HOST=root@ha.local`). Requires the "Advanced SSH &
+# Web Terminal" add-on; the official SSH add-on cannot reach the core container,
+# which `deploy-lib` needs.
+haos_host := env("HAOS_HOST", "root@homeassistant.local")
+haos_config := "/config"
 pyproject := "sydpower/pyproject.toml"
 setup := "sydpower/setup.py"
 manifest := "custom_components/sydpower/manifest.json"
@@ -207,6 +215,66 @@ release-now level="patch":
     just bump {{level}}
     {{python}} -c "import pathlib;p=pathlib.Path('{{changes}}');p.write_text(p.read_text().replace('TODO: describe this release.','Version bump.',1))"
     just release
+
+# ── Deploying to Home Assistant OS ────────────────────────────────────────────
+#
+# Python modules are cached once imported, so editing a file and reloading the
+# config entry does NOT pick up code changes — the core has to restart. That is
+# why every deploy recipe here restarts it.
+
+# Copy the integration to HAOS and restart the core. For integration-only edits.
+deploy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    src="{{justfile_directory()}}/custom_components/sydpower/"
+    echo "deploying to {{haos_host}}:{{haos_config}}/custom_components/sydpower/"
+    # --delete so files removed locally do not linger and shadow new code.
+    rsync -av --delete \
+        --exclude '__pycache__' --exclude '*.pyc' \
+        "$src" "{{haos_host}}:{{haos_config}}/custom_components/sydpower/"
+    ssh "{{haos_host}}" 'ha core restart'
+    echo "restarted; follow with: just logs"
+
+# Build the library, install it into the core container, and restart.
+deploy-lib: build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Use this while iterating on sydpower/ without cutting a release: the
+    # manifest pin is version-based, so HA skips reinstalling a version it
+    # already has, and edits would otherwise never reach the box.
+    wheel=$(ls "{{justfile_directory()}}/sydpower/dist/"*.whl | head -1)
+    name=$(basename "$wheel")
+    echo "installing $name into the core container on {{haos_host}}"
+    scp "$wheel" "{{haos_host}}:/tmp/$name"
+    # Needs the Advanced SSH add-on with protection mode off, so docker is
+    # reachable. --force-reinstall because the version may not have changed.
+    ssh "{{haos_host}}" "docker cp /tmp/$name homeassistant:/tmp/$name && \
+        docker exec homeassistant pip install --force-reinstall --no-deps /tmp/$name"
+    ssh "{{haos_host}}" 'ha core restart'
+    echo "restarted"
+
+# Deploy both the library and the integration.
+deploy-all: deploy-lib deploy
+
+# Follow the Home Assistant log, filtered to this integration and the library.
+logs:
+    ssh "{{haos_host}}" 'tail -f {{haos_config}}/home-assistant.log' \
+        | grep --line-buffered -iE 'sydpower|bleak|bluetooth' || true
+
+# Print recent errors and warnings mentioning this integration.
+logs-errors:
+    ssh "{{haos_host}}" 'grep -iE "sydpower" {{haos_config}}/home-assistant.log' \
+        | grep -iE "error|warning|traceback|Failed" | tail -40 || true
+
+# Report which version is installed on the box, for both halves.
+deployed:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    echo "integration manifest on device:"
+    ssh "{{haos_host}}" "grep -E '\"version\"' {{haos_config}}/custom_components/sydpower/manifest.json" || true
+    echo "library in the core container:"
+    ssh "{{haos_host}}" "docker exec homeassistant pip show sydpower 2>/dev/null | grep -iE '^version'" || true
+    echo "local: $(just version)"
 
 # Show the state of the most recent release and whether its wheel resolves.
 status:
