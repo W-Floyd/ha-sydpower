@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2026-08-12
+
+First release verified end to end against real hardware in Home Assistant: a
+FOSSiBOT/SYDPOWER `POWER-8043` (protocol v0, Modbus address 17, 80 registers)
+reached over an ESPHome Bluetooth proxy. Seven of the nine writable registers
+were commanded and read back, including all four persisted settings registers.
+
+### Fixed
+- **A stale frame no longer fails an exchange.** The device can deliver a queued
+  write echo on the *next* connection, ahead of the reply being awaited; that
+  aborted the following poll. Such a frame is now discarded and the buffer keeps
+  waiting. It is still never interpreted as register data, and the caller's
+  timeout continues to bound the wait.
+- **Advertisement parsing was off by one byte.** These devices put their payload
+  straight into the AD structure, so bleak reads its first two bytes as a
+  manufacturer company ID and strips them into the dict key — but both are
+  payload. On air the device sends `99 50 78 7D BA A6 5A 00`; parsing only
+  bleak's remainder yielded `78:7D:BA:A6:5A:00` instead of `50:78:7D:BA:A6:5A`,
+  the address Home Assistant's own Bluetooth stack reports. The company ID is now
+  reassembled before parsing.
+
+### Changed
+- **The product catalog ships only `products` and `categories`.** Its 438 KB
+  `features` section is dropped: nothing reads it, and its contents mislead — a
+  child entry's `input_index` is a sub-index within its parent, not a register
+  number. The unabridged file is kept in the repository at
+  `reference/product_catalog.full.json`, outside the package. This takes the
+  wheel from roughly 45 KB to 30 KB; device parameter lookup is unaffected.
+
 ## [0.3.6] - 2026-08-11
 
 ### Changed
