@@ -36,6 +36,7 @@ import argparse
 import hashlib
 import hmac
 import json
+import os
 import re
 import shutil
 import sys
@@ -53,6 +54,14 @@ ROUTER_FUNCTION = "router"
 ACTIONS = {
     "products": "client/product/pub/listProductByWhereJson_v2",
     "detail": "client/product/pub/getAllProductList",
+}
+
+# Reachable only with a signed-in user token: anything under client/device/ replies
+# `token校验未通过` ("token verification failed") to an anonymous one. Fetched when
+# --token is supplied, skipped otherwise.
+AUTHENTICATED_ACTIONS = {
+    "firmware_hint": "client/device/kh/getFirmwareUpgradeHint",
+    "fault_codes": "client/device/faultCode.getList",
 }
 
 # Copied from a category onto each of its products, matching the previous
@@ -290,7 +299,13 @@ def call(config: dict[str, str], action: str, locale: str, token: str) -> Any:
     return result
 
 
-def fetch(config: dict[str, str], locale: str, cache: Path, refresh: bool) -> dict[str, Any]:
+def fetch(
+    config: dict[str, str],
+    locale: str,
+    cache: Path,
+    refresh: bool,
+    user_token: str | None = None,
+) -> dict[str, Any]:
     """
     Return the raw API payloads, fetching only what is not already cached.
 
@@ -301,7 +316,13 @@ def fetch(config: dict[str, str], locale: str, cache: Path, refresh: bool) -> di
     payloads: dict[str, Any] = {}
     token: str | None = None
 
-    for name, action in ACTIONS.items():
+    wanted = dict(ACTIONS)
+    if user_token:
+        wanted.update(AUTHENTICATED_ACTIONS)
+    else:
+        log("fetch", "no --token: skipping " + ", ".join(AUTHENTICATED_ACTIONS))
+
+    for name, action in wanted.items():
         path = cache / f"{name}.{locale}.json"
         if path.exists() and not refresh:
             log("cache", f"{name} <- {path.name}")
@@ -310,7 +331,9 @@ def fetch(config: dict[str, str], locale: str, cache: Path, refresh: bool) -> di
         if token is None:
             token = get_access_token(config, locale)
         log("fetch", action)
-        payloads[name] = call(config, action, locale, token)
+        # The user token replaces the anonymous one for user-scoped actions.
+        use = user_token if name in AUTHENTICATED_ACTIONS else token
+        payloads[name] = call(config, action, locale, use)
         path.write_text(json.dumps(payloads[name], ensure_ascii=False, indent=1))
         log("cache", f"{name} -> {path.name} ({path.stat().st_size // 1024} KB)")
 
@@ -380,6 +403,16 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
         setting_defs.append(definition)
     catalog["settings"] = setting_defs
     log("build", f"{len(setting_defs)} setting definitions")
+
+    # Firmware gates: the app hides some setting options on specific product +
+    # panel-version combinations. Only present when fetched with a user token.
+    hint = payloads.get("firmware_hint") or {}
+    gates = hint.get("AC_standby_time_list")
+    if gates:
+        catalog["firmware_gates"] = {"ac_standby_time": gates}
+        log("build", f"{len(gates)} firmware gate rule(s)")
+    else:
+        log("build", "no firmware gate rules (needs --token)")
 
     for category in detail.get("category_list_all", []):
         catalog["categories"][category["_id"]] = {
@@ -508,6 +541,15 @@ def main() -> int:
     parser.add_argument("--locale", default="en", help="locale requested from the backend")
     parser.add_argument("--refresh", action="store_true", help="ignore cached API responses")
     parser.add_argument(
+        "--token",
+        default=os.environ.get("BRIGHTEMS_TOKEN"),
+        help=(
+            "signed-in BrightEMS user token (or set BRIGHTEMS_TOKEN). Only needed "
+            "for the firmware gate table and fault codes, which reject anonymous "
+            "requests. Obtainable from the app's own network traffic."
+        ),
+    )
+    parser.add_argument(
         "--stage",
         choices=("unpack", "beautify", "config", "fetch", "build"),
         default="build",
@@ -546,7 +588,7 @@ def main() -> int:
     if args.stage == "config":
         return 0
 
-    payloads = fetch(config, args.locale, args.workdir / "api", args.refresh)
+    payloads = fetch(config, args.locale, args.workdir / "api", args.refresh, args.token)
     if args.stage == "fetch":
         return 0
 

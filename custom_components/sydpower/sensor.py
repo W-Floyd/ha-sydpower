@@ -50,7 +50,9 @@ FIRMWARE_REGISTERS: tuple[tuple[str, str, int], ...] = (
     ("ac_version", "AC firmware", 47),
     ("bms_version", "BMS firmware", 48),
     ("pv_version", "PV firmware", 49),
-    ("dc_version", "DC firmware", 50),
+    # The app's constant for register 50 is Panel_Version, though it posts the
+    # same value to its backend as DC_version, and gates setting options on it.
+    ("dc_version", "Panel firmware", 50),
 )
 
 

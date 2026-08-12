@@ -262,6 +262,76 @@ class TestProductSettings:
                 )
 
 
+class TestFirmwareGate:
+    """
+    Test hiding setting options that a device's firmware cannot honour.
+
+    The gate table is only reachable with a signed-in user token, so these use
+    synthetic rules; the matching logic mirrors the app's.
+    """
+
+    SETTING = {"holding_index": 60, "data_list": [0, 8, 16, 24]}
+
+    def _with_rules(self, rules):
+        """Install a gate table into the cached catalog for one test."""
+        from sydpower import catalog
+
+        catalog._load()  # ensure the cache is populated before mutating it
+        catalog._cache = {**catalog._cache, "firmware_gates": {"ac_standby_time": rules}}
+        return catalog
+
+    def teardown_method(self):
+        from sydpower import catalog
+
+        catalog.invalidate_cache()
+
+    def test_no_gate_table_leaves_options_untouched(self):
+        from sydpower.catalog import gated_setting_options
+
+        assert gated_setting_options(self.SETTING, "POWER-8043", 29) == [0, 8, 16, 24]
+
+    def test_matching_rule_drops_the_never_option(self):
+        catalog = self._with_rules(
+            [{"product_name": "POWER-8043", "panel_version": "2.9"}]
+        )
+        # 29 is the raw register value; the app compares its low byte against
+        # ten times the rule's version, so 2.9 matches 29.
+        assert catalog.gated_setting_options(self.SETTING, "POWER-8043", 29) == [8, 16, 24]
+
+    def test_other_product_is_unaffected(self):
+        catalog = self._with_rules(
+            [{"product_name": "POWER-OTHER", "panel_version": "2.9"}]
+        )
+        assert catalog.gated_setting_options(self.SETTING, "POWER-8043", 29) == [0, 8, 16, 24]
+
+    def test_other_panel_version_is_unaffected(self):
+        catalog = self._with_rules(
+            [{"product_name": "POWER-8043", "panel_version": "3.1"}]
+        )
+        assert catalog.gated_setting_options(self.SETTING, "POWER-8043", 29) == [0, 8, 16, 24]
+
+    def test_only_the_low_byte_is_compared(self):
+        """The register's high byte is not part of the version."""
+        catalog = self._with_rules(
+            [{"product_name": "POWER-8043", "panel_version": "2.9"}]
+        )
+        # Low byte 29 (decimal, i.e. version 2.9) with an arbitrary high byte set.
+        raw = (4 << 8) | 29
+        assert catalog.gated_setting_options(self.SETTING, "POWER-8043", raw) == [8, 16, 24]
+
+    def test_unknown_panel_version_leaves_options_untouched(self):
+        catalog = self._with_rules(
+            [{"product_name": "POWER-8043", "panel_version": "2.9"}]
+        )
+        assert catalog.gated_setting_options(self.SETTING, "POWER-8043", None) == [0, 8, 16, 24]
+
+    def test_malformed_rule_is_skipped(self):
+        catalog = self._with_rules(
+            [{"product_name": "POWER-8043", "panel_version": "not-a-number"}]
+        )
+        assert catalog.gated_setting_options(self.SETTING, "POWER-8043", 29) == [0, 8, 16, 24]
+
+
 class TestAdvertisementParsing:
     """
     Test recovery of the device MAC from the advertisement payload.

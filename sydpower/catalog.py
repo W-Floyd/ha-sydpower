@@ -124,6 +124,51 @@ def get_product_settings(product_key: str) -> list[dict]:
     ]
 
 
+# Register holding the panel firmware version. The app's own constant is
+# `Panel_Version`, though it posts the same register to its backend as
+# `DC_version`.
+PANEL_VERSION_REGISTER = 50
+
+
+def gated_setting_options(
+    setting: dict,
+    product_name: str,
+    panel_version_raw: int | None,
+) -> list[int]:
+    """
+    Return a setting's options with any firmware-gated ones removed.
+
+    Some product and panel-version combinations cannot honour every option the
+    catalog lists, and the app hides those. For the AC no-load standby timer it
+    drops the zero ("never turn off") option when the device's product name and
+    panel version match a rule in the gate table:
+
+        if rule.product_name == product_name
+           and 10 * float(rule.panel_version) == panel_version_low:
+               options = [o for o in options if o > 0]
+
+    ``panel_version_raw`` is the raw value of the panel version register; only its
+    low byte is compared, and the app reads it as tenths, so 29 means 2.9.
+
+    Without a gate table — it needs an authenticated fetch — this returns the
+    options unchanged.
+    """
+    options = list(setting.get("data_list") or [])
+    rules = _load().get("firmware_gates", {}).get("ac_standby_time") or []
+    if not rules or panel_version_raw is None:
+        return options
+
+    low = panel_version_raw & 0xFF
+    for rule in rules:
+        try:
+            version = float(rule.get("panel_version"))
+        except (TypeError, ValueError):
+            continue
+        if rule.get("product_name") == product_name and round(10 * version) == low:
+            return [o for o in options if o > 0]
+    return options
+
+
 def list_product_keys() -> list[str]:
     """Return all known product keys from the catalog."""
     return list(_load().get("products", {}).keys())

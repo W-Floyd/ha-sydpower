@@ -164,3 +164,40 @@ Worked out from the beautified bundle rather than guessed:
 "neutral/universal", the OEM's white-label bucket — and resellers such as AFERIY
 and FOSSiBOT do not appear at all. `product_name` is the useful identity: it
 holds the OEM model code, e.g. `P210-A0E01` for an AFERIY P210.
+
+### Authenticated endpoints
+
+Everything under `client/device/` rejects an anonymous token with
+`token校验未通过` ("token verification failed"); only the `client/product/pub/`
+actions are reachable without signing in. Two useful payloads sit behind that:
+
+| Action | Contains |
+| --- | --- |
+| `client/device/kh/getFirmwareUpgradeHint` | `AC_standby_time_list`, the firmware gate table, plus `product_version_list` |
+| `client/device/faultCode.getList` | Fault code descriptions |
+
+Pass a signed-in user token to fetch and cache them:
+
+```bash
+BRIGHTEMS_TOKEN=... python extract_catalog.py --xapk app.xapk
+# or: python extract_catalog.py --xapk app.xapk --token ...
+```
+
+Without one the script logs which actions it skipped and carries on; the catalog
+simply has no `firmware_gates` section, and the gate is then a no-op.
+
+### The firmware gate
+
+Some product and panel-version combinations cannot honour every option the
+catalog lists. For the AC no-load standby timer the app drops the zero ("never
+turn off") option when a rule matches:
+
+```
+rule.product_name == productInfo.name
+  and 10 * float(rule.panel_version) == lowByte(holding[50])
+```
+
+Register 50 is the panel firmware version — the app's constant is
+`Panel_Version`, though it posts the same register to its backend as
+`DC_version`. Versions are tenths, so a register value of 29 is v2.9. The four
+version registers are 47 (AC), 48 (BMS), 49 (PV) and 50 (panel).

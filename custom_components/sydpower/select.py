@@ -26,7 +26,11 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from sydpower.catalog import get_product_settings
+from sydpower.catalog import (
+    PANEL_VERSION_REGISTER,
+    gated_setting_options,
+    get_product_settings,
+)
 from sydpower.constants import (
     SETTING_ENCODING_INDEX1,
     SETTING_ENCODING_X60,
@@ -35,6 +39,7 @@ from sydpower.constants import (
 )
 
 from .const import (
+    CONF_NAME,
     CONF_PRODUCT_KEY,
     DOMAIN,
     LIGHT_MODES,
@@ -79,13 +84,20 @@ def _encode(register: int, value: int, index: int) -> int:
     return value
 
 
-def _catalog_descriptions(product_key: str) -> list[SydpowerSelectDescription]:
+def _catalog_descriptions(
+    product_key: str,
+    product_name: str,
+    panel_version: int | None,
+) -> list[SydpowerSelectDescription]:
     """Build a select description per catalog setting that offers a choice."""
     descriptions: list[SydpowerSelectDescription] = []
 
     for setting in get_product_settings(product_key):
         register = setting.get("holding_index")
-        options = setting.get("data_list") or []
+        # Some options cannot be honoured on particular product and panel-version
+        # combinations, and the app hides them. Without an authenticated gate
+        # table this is a no-op.
+        options = gated_setting_options(setting, product_name, panel_version)
         # A bit-packed setting addresses part of a register, which this platform
         # does not implement; skip rather than write a whole register.
         if register is None or len(options) < 2 or "bit" in setting:
@@ -101,7 +113,10 @@ def _catalog_descriptions(product_key: str) -> list[SydpowerSelectDescription]:
             continue
 
         units = setting.get("units") or []
-        values = tuple(_encode(register, v, i) for i, v in enumerate(options))
+        # Labels come from the unfiltered list so a gated option does not shift
+        # the remaining labels.
+        full = setting.get("data_list") or options
+        values = tuple(_encode(register, v, full.index(v)) for v in options)
         low, high = WRITABLE_HOLDING_REGISTERS[register]
         if any(not low <= v <= high for v in values):
             # A mismatch means the encoding table and the allowlist disagree,
@@ -123,9 +138,7 @@ def _catalog_descriptions(product_key: str) -> list[SydpowerSelectDescription]:
                 name=name,
                 register=register,
                 values=values,
-                choices=tuple(
-                    _label(v, i, units, options) for i, v in enumerate(options)
-                ),
+                choices=tuple(_label(v, full.index(v), units, full) for v in options),
                 entity_category=EntityCategory.CONFIG,
             )
         )
@@ -153,7 +166,18 @@ async def async_setup_entry(
     coordinator: SydpowerCoordinator = hass.data[DOMAIN][entry.entry_id]
     product_key = entry.data.get(CONF_PRODUCT_KEY) or ""
 
-    descriptions = [_light_mode_description(), *_catalog_descriptions(product_key)]
+    # The panel version is only known once a poll has happened; when it is not
+    # yet available the gate simply does not apply.
+    data = coordinator.data
+    panel_version = (
+        data.holding[PANEL_VERSION_REGISTER]
+        if data is not None and PANEL_VERSION_REGISTER < len(data.holding)
+        else None
+    )
+    descriptions = [
+        _light_mode_description(),
+        *_catalog_descriptions(product_key, entry.data.get(CONF_NAME, ""), panel_version),
+    ]
     _LOGGER.debug("Adding %d select(s) for %s", len(descriptions), product_key)
     async_add_entities(
         SydpowerSelect(coordinator, entry, desc) for desc in descriptions
