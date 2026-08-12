@@ -343,6 +343,21 @@ expansion pack ever counts.
 - `input[19]`, constant 600 across every mains and inverter state — narrowed to a
   nominal 60.0 Hz rating rather than a measurement, but not confirmed. Not read
   literally anywhere in the app.
+
+  A 50/60 Hz region mode would explain both the value and the invariance, and it
+  is the best available reading of *what 600 means*, corroborated by `holding[18]`
+  holding 115 — a 115 V/60 Hz nominal pair for this unit. But nothing supports it
+  being **selectable**:
+
+  * The app contains no `Hz` string at all (its one match is inside a base64
+    image) and no frequency setting among the 33 settings across all 169 products.
+  * No holding register holds 50, 60 or 600. Settings live in the holding bank,
+    and register 19 as measured is in the read-only input bank, so it cannot
+    itself be the selector — at most a readback of one.
+
+  So if a frequency mode is settable it is neither app-exposed nor discoverable
+  from the catalog, and finding it would mean probing unnamed holding registers —
+  which is the class of write that can boot-loop the unit. Not worth it.
 - State-word bits 24, 29, 30 and 31, which drive the app's animations. Bits 17 and
   19 were set in every frame with mains present and clear in every frame without,
   and bit 22 the exact inverse, so those three are mains-presence and on-battery
