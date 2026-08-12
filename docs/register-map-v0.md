@@ -277,11 +277,20 @@ So "every morning at six" is not something the device does. Re-arming it daily i
 the caller's job — an automation writing the delay each day would do it.
 
 Cancelling a schedule and remote shutdown are exposed as buttons, and the schedule
-itself as a datetime entity. That entity holds no state of its own: it projects the
-device's countdown forward to a wall-clock time, so it clears itself once the
-countdown expires, and a schedule set from the app shows up in it too. Setting one
-computes the delay and range-checks it, refusing a time in the past or more than a
-day ahead. Note that the same page also carries
+itself as a datetime entity.
+
+Reconstructing a wall-clock time from the countdown needs care. The countdown has
+minute resolution and "now" does not, so projecting it on every poll makes the value
+drift by seconds each time — a state change every poll for a time that has not
+moved. The entity therefore remembers the time it was asked for, reports it
+unchanged, and uses the countdown only as a check: agreement within 120 s holds the
+remembered value, disagreement means the schedule was changed elsewhere and the
+device's projection is adopted instead. The tolerance is the sum of the rounding
+applied when writing the delay (±30 s) and the countdown's own minute quantisation
+(up to 60 s), with margin; a schedule genuinely changed elsewhere differs by minutes.
+
+A countdown of zero clears it, so expiry needs no handling. The remembered time
+survives restarts and is checked the same way, so a stale one cannot persist. Note that the same page also carries
 the silent-charging toggle and the charging-power settings, which is corroborating
 evidence for holding 57 being silent charging.
 

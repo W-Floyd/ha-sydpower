@@ -1,16 +1,23 @@
 """
 Datetime platform for Sydpower BLE devices: when charging is scheduled to start.
 
-The device stores a *delay* in minutes, not a time, and counts it down. So this
-entity is a view over that countdown rather than stored state of its own:
+The device stores a *delay* in minutes and counts it down, so a wall-clock time has
+to be reconstructed. Deriving it from the countdown on every poll would make the
+value drift by seconds each time, because the countdown has minute resolution while
+"now" does not — a state change every poll for a time that has not actually moved.
 
-* Reading it: the countdown in input 57, projected forward from now. Zero means
-  nothing is scheduled, and the value is ``None``.
-* Setting it: the delay to the requested time is computed and written to holding
-  63, which is what the app does.
-* Expiry: nothing to do. Once the device's countdown reaches zero the projection
-  yields ``None`` and the entity clears itself. A schedule set from the app appears
-  here for the same reason.
+So the target time set here is remembered, reported verbatim, and merely *checked*
+against the countdown:
+
+* Setting it stores the requested time and writes the delay to holding 63.
+* Reading it returns the stored time unchanged, as long as the countdown still
+  agrees within a tolerance. The value therefore never drifts.
+* If the countdown disagrees, the schedule was changed elsewhere — from the app, or
+  cancelled — so the device wins and its projection is adopted.
+* A countdown of zero clears the schedule, which is how expiry takes care of itself.
+
+The stored time is restored across restarts, and validated against the countdown
+like any other, so a stale one cannot survive.
 
 The schedule is one-shot; the device has no notion of repeating. Re-arming daily is
 an automation's job, which this entity exists to make possible.
@@ -27,6 +34,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import dt as dt_util
 
 from sydpower.constants import WRITABLE_HOLDING_REGISTERS
@@ -41,9 +49,17 @@ from .entity import SydpowerEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-# Writing zero cancels, so a schedule needs at least one minute. The ceiling comes
+# Writing zero cancels, so a schedule needs at least a minute. The ceiling comes
 # from the allowlist rather than being repeated here.
 MIN_DELAY_MINUTES = 1
+
+# How far the countdown may sit from the remembered time before the device is taken
+# to disagree. Two effects stack: the delay written is the requested time rounded to
+# the nearest minute (±30 s), and the countdown only decrements once a minute, so a
+# projection from it lags by up to another 60 s. That is 90 s of expected slack, and
+# 120 s leaves margin for poll timing. A schedule genuinely changed elsewhere will
+# differ by minutes, so this is comfortably inside the gap between drift and change.
+COUNTDOWN_TOLERANCE = timedelta(seconds=120)
 
 
 def _max_delay_minutes() -> int:
@@ -62,7 +78,7 @@ async def async_setup_entry(
     async_add_entities([SydpowerScheduledCharge(coordinator, entry)])
 
 
-class SydpowerScheduledCharge(SydpowerEntity, DateTimeEntity):
+class SydpowerScheduledCharge(SydpowerEntity, DateTimeEntity, RestoreEntity):
     """When charging is scheduled to start, or None when nothing is scheduled."""
 
     _attr_name = "Scheduled charge"
@@ -74,9 +90,22 @@ class SydpowerScheduledCharge(SydpowerEntity, DateTimeEntity):
         entry: ConfigEntry,
     ) -> None:
         super().__init__(coordinator, entry, "scheduled_charge")
-        # The projection moves with the clock, so it is held steady while it agrees
-        # with the countdown; see native_value.
-        self._reported: datetime | None = None
+        self._target: datetime | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Recover the remembered time so a restart does not shift the value."""
+        await super().async_added_to_hass()
+        last = await self.async_get_last_state()
+        if last is None or last.state in (None, "", "unknown", "unavailable"):
+            return
+        restored = dt_util.parse_datetime(last.state)
+        if restored is None:
+            _LOGGER.debug("Ignoring unparseable restored value %r", last.state)
+            return
+        # Not trusted yet: the next read checks it against the countdown and
+        # discards it if the device has moved on.
+        self._target = dt_util.as_utc(restored)
+        _LOGGER.debug("Restored scheduled charge %s, pending verification", self._target)
 
     @property
     def available(self) -> bool:
@@ -87,31 +116,29 @@ class SydpowerScheduledCharge(SydpowerEntity, DateTimeEntity):
 
     @property
     def native_value(self) -> datetime | None:
-        """
-        Project the device's countdown into a wall-clock time.
-
-        The projection would otherwise shift by a few seconds on every poll, since
-        the countdown has minute resolution while "now" does not, producing a state
-        change every poll and a great deal of noise. The previously reported value
-        is therefore kept whenever it still agrees with the countdown to within a
-        minute.
-        """
         countdown = self._input(INPUT_SCHEDULED_CHARGE_COUNTDOWN)
         if countdown is None or countdown <= 0:
-            self._reported = None
+            # Nothing scheduled: expiry and cancellation both land here.
+            self._target = None
             return None
 
         projected = dt_util.utcnow() + timedelta(minutes=countdown)
-        projected = projected.replace(second=0, microsecond=0)
 
-        if (
-            self._reported is not None
-            and abs((projected - self._reported).total_seconds()) <= 60
-        ):
-            return self._reported
+        if self._target is not None:
+            if abs(projected - self._target) <= COUNTDOWN_TOLERANCE:
+                # Countdown agrees: report the time actually asked for, unchanged.
+                return self._target
+            _LOGGER.debug(
+                "Countdown projects %s but %s was remembered; adopting the device's "
+                "schedule, which was presumably changed elsewhere",
+                projected,
+                self._target,
+            )
 
-        self._reported = projected
-        return projected
+        # No remembered time, or the device disagrees: take its view. Subsequent
+        # polls agree with this within the tolerance, so it settles immediately.
+        self._target = projected.replace(second=0, microsecond=0)
+        return self._target
 
     async def async_set_value(self, value: datetime) -> None:
         """Schedule charging for *value*, rejecting anything out of range."""
@@ -119,8 +146,8 @@ class SydpowerScheduledCharge(SydpowerEntity, DateTimeEntity):
         target = dt_util.as_utc(value)
         maximum = _max_delay_minutes()
 
-        # Round rather than truncate: a target 90 seconds away is better honoured
-        # as two minutes than as one.
+        # Round rather than truncate: a target 90 seconds away is better honoured as
+        # two minutes than as one.
         delay = round((target - now).total_seconds() / 60)
 
         if delay < MIN_DELAY_MINUTES:
@@ -134,10 +161,7 @@ class SydpowerScheduledCharge(SydpowerEntity, DateTimeEntity):
                 f"schedules up to {maximum} minutes ({maximum // 60} hours) ahead"
             )
 
-        _LOGGER.debug(
-            "Scheduling charge for %s, a delay of %d minute(s)", target, delay
-        )
+        _LOGGER.debug("Scheduling charge for %s, a delay of %d minute(s)", target, delay)
         await self.coordinator.async_write_register(REG_SCHEDULED_CHARGE, delay)
-        # Report the requested time rather than re-deriving it, so the value does
-        # not appear to jump by a minute immediately after being set.
-        self._reported = target.replace(second=0, microsecond=0)
+        # Remember what was asked for, not what the delay rounds back to.
+        self._target = target
