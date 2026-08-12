@@ -257,3 +257,10 @@ apk_analysis/extracted/
 *.xapk
 *.pyc
 analysis/app-service-beautified.js
+
+# Python virtualenvs and build output (sydpower library)
+.venv/
+venv/
+sydpower/dist/
+sydpower/build/
+sydpower/*.egg-info/
