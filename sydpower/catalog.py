@@ -83,6 +83,22 @@ def get_device_params(product_key: str) -> DeviceParams | None:
     )
 
 
+def get_product_model(product_key: str) -> str | None:
+    """
+    Return the OEM model code for a product key, e.g. ``"P210-A0E01"``.
+
+    Returns ``None`` when the catalog or the key is unavailable. Note the catalog
+    has no consumer brand: its largest group is the manufacturer's white-label
+    bucket, and resellers such as AFERIY or FOSSiBOT do not appear at all, so the
+    model code is the only identity worth reporting.
+    """
+    product = _load().get("products", {}).get(product_key)
+    if product is None:
+        return None
+    model = product.get("model")
+    return model.strip() if isinstance(model, str) and model.strip() else None
+
+
 def list_product_keys() -> list[str]:
     """Return all known product keys from the catalog."""
     return list(_load().get("products", {}).keys())

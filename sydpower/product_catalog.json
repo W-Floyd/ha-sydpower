@@ -1,4 +1,10 @@
 {
+ "_meta": {
+  "generated_by": "analysis/extract_catalog.py",
+  "locale": "en",
+  "space_id": "mp-6c382a98-49b8-40ba-b761-645d83e8ee74",
+  "features": "see reference/product_catalog.full.json"
+ },
  "categories": {
   "658d429921821b50af80ff4d": {
    "modbus_address": 17,
@@ -24,1065 +30,1365 @@
    "modbus_address": 17,
    "modbus_count": 20,
    "page_path": "/pages/device/dc-dc/info"
+  },
+  "6a5450957ad52d66caf7a041": {
+   "modbus_address": 18,
+   "modbus_count": 200,
+   "page_path": "/pages/device/balcony-pv/info"
   }
  },
  "products": {
+  "00000AB2-0000-1000-8000-00805F9B34FB_POWER-V1-B20A": {
+   "product_id": "6a61b185149854562e91276e",
+   "category_id": "68b17ab3e0ec192f194bf7a1",
+   "protocol_version": 1,
+   "modbus_address": 17,
+   "modbus_count": 100,
+   "model": "Elux1"
+  },
+  "0000CA20-0000-1000-8000-00805F9B34FB_POWER-V2-20CA": {
+   "product_id": "6a5456808620666ac1853d79",
+   "category_id": "6a5450957ad52d66caf7a041",
+   "protocol_version": 2,
+   "modbus_address": 18,
+   "modbus_count": 200,
+   "model": "ABOK | YT004 | 220V"
+  },
+  "0000819C-0000-1000-8000-00805F9B34FB_POWER-9C81": {
+   "product_id": "6a4243a9a7c432f4c00ec4cc",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "N075 | 120v"
+  },
+  "00008A05-0000-1000-8000-00805F9B34FB_POWER-058A": {
+   "product_id": "6a388df69755e37c2313c801",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "Ark7200"
+  },
+  "00004A9D-0000-1000-8000-00805F9B34FB_POWER-9D4A": {
+   "product_id": "6a2915f11498546715e99e53",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "Ark2500"
+  },
+  "00004A84-0000-1000-8000-00805F9B34FB_POWER-844A": {
+   "product_id": "6a1e796d286f7c46d605bce0",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "Ark2500"
+  },
+  "00004A07-0000-1000-8000-00805F9B34FB_POWER-074A": {
+   "product_id": "6a1e78bfeef9cb8543b3a4fb",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "Ark2800"
+  },
+  "00004206-0000-1000-8000-00805F9B34FB_POWER-0642": {
+   "product_id": "6a1d6cf18a5c7892cb8fe61d",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "ITWORLD｜N103｜220v"
+  },
+  "00004283-0000-1000-8000-00805F9B34FB_POWER-8342": {
+   "product_id": "6a1d6cd3eef9cb854397a70d",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "ITWORLD｜N103｜110v"
+  },
+  "00008A1D-0000-1000-8000-00805F9B34FB_POWER-V1-1D8A": {
+   "product_id": "6a155d6c3d029cf25ad6ba38",
+   "category_id": "68b17ab3e0ec192f194bf7a1",
+   "protocol_version": 1,
+   "modbus_address": 17,
+   "modbus_count": 100,
+   "model": "ABOK | N122 | 220V"
+  },
+  "00004AB3-0000-1000-8000-00805F9B34FB_POWER-V1-B34A": {
+   "product_id": "6a155a7421821b4b49ebbe3f",
+   "category_id": "68b17ab3e0ec192f194bf7a1",
+   "protocol_version": 1,
+   "modbus_address": 17,
+   "modbus_count": 100,
+   "model": "ABOK | N121 | 120V"
+  },
+  "00004A4F-0000-1000-8000-00805F9B34FB_POWER-V1-4F4A": {
+   "product_id": "6a1559b621821b4b49eba674",
+   "category_id": "68b17ab3e0ec192f194bf7a1",
+   "protocol_version": 1,
+   "modbus_address": 17,
+   "modbus_count": 100,
+   "model": "ABOK | N121 | 110V"
+  },
+  "00004783-0000-1000-8000-00805F9B34FB_POWER-8347": {
+   "product_id": "6a154507a09a9b4b312e2ed0",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "Genectra｜N103｜110v"
+  },
+  "00004706-0000-1000-8000-00805F9B34FB_POWER-0647": {
+   "product_id": "6a1544b97ae708a3de51efae",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "Genectra｜N103｜220v"
+  },
+  "00000A1A-0000-1000-8000-00805F9B34FB_POWER-V1-1A0A": {
+   "product_id": "69f2d29da09a9b89b3f04669",
+   "category_id": "681c188bc3b5c9ba15217b9d",
+   "protocol_version": 1,
+   "modbus_address": 18,
+   "modbus_count": 100,
+   "model": "ABOK | YT004 | 220V"
+  },
+  "00000307-0000-1000-8000-00805F9B34FB_POWER-0703": {
+   "product_id": "69e96cf0f2949cba92b9fa3e",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "AF-P300｜220v"
+  },
+  "00000384-0000-1000-8000-00805F9B34FB_POWER-8403": {
+   "product_id": "69e96cd9286f7c23608f9864",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "AF-P300｜110v"
+  },
+  "0000039D-0000-1000-8000-00805F9B34FB_POWER-9D03": {
+   "product_id": "69e96cb4f2949cba92b9f4d6",
+   "category_id": "658d429921821b50af80ff4d",
+   "protocol_version": 0,
+   "modbus_address": 17,
+   "modbus_count": 80,
+   "model": "AF-P300｜120v"
+  },
   "0000C106-0000-1000-8000-00805F9B34FB_POWER-06C1": {
    "product_id": "69d70c58189f8658d9260223",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N124 | 220V"
   },
   "00008183-0000-1000-8000-00805F9B34FB_POWER-8381": {
    "product_id": "69cc90fb2eea65d876da65ef",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N075 | 110V"
   },
   "00008106-0000-1000-8000-00805F9B34FB_POWER-0681": {
    "product_id": "69cc90547ad52d3f64bdbbcf",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N075 | 220V"
   },
   "00004400-0000-1000-8000-00805F9B34FB_DC_DC-V1-0044": {
    "product_id": "69c1ecaae0ec1937d2296c90",
    "category_id": "691688821c90b602bba305c4",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 20
+   "modbus_count": 20,
+   "model": "FAC580"
   },
   "00008E04-0000-1000-8000-00805F9B34FB_POWER-048E": {
    "product_id": "69abf66e8a5c785fa8dfd1d1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 1200"
   },
   "00008E81-0000-1000-8000-00805F9B34FB_POWER-818E": {
    "product_id": "69abf5f4bd0220abe8b82f08",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 1200"
   },
   "00008E00-0000-1000-8000-00805F9B34FB_POWER-008E": {
    "product_id": "69abed63189f86f4274da516",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 2400"
   },
   "00008E7D-0000-1000-8000-00805F9B34FB_POWER-7D8E": {
    "product_id": "69abecf92eea65e1e5be0fac",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 2400"
   },
   "00004E00-0000-1000-8000-00805F9B34FB_POWER-004E": {
    "product_id": "69abeb82ce5ec9f53318a886",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 3600"
   },
   "00004E7D-0000-1000-8000-00805F9B34FB_POWER-7D4E": {
    "product_id": "69abeafcf2949c72754b1c07",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 3600"
   },
   "00008E01-0000-1000-8000-00805F9B34FB_POWER-018E": {
    "product_id": "69aba0068a5c785fa8d5f4ab",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 3600PRO"
   },
   "00008E7E-0000-1000-8000-00805F9B34FB_POWER-7E8E": {
    "product_id": "69ab9e72a09a9b8b7a5323e7",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "VARTU 3600PRO"
   },
   "00008300-0000-1000-8000-00805F9B34FB_DC_DC-V1-0083": {
    "product_id": "69a29afd149854dda3c7324e",
    "category_id": "691688821c90b602bba305c4",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 20
+   "modbus_count": 20,
+   "model": "AF-DC060"
   },
   "0000031D-0000-1000-8000-00805F9B34FB_POWER-V1-1D03": {
    "product_id": "69815c8ba7c432dd4eb5cc04",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "AF-P180PRO | 220v"
   },
   "000003B3-0000-1000-8000-00805F9B34FB_POWER-V1-B303": {
    "product_id": "69815c50b9fb2395649d1f3d",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "AF-P180PRO | 120v"
   },
   "0000034F-0000-1000-8000-00805F9B34FB_POWER-V1-4F03": {
    "product_id": "69815c2e14985482043cf5ab",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "AF-P180PRO | 110v"
   },
   "00000A1C-0000-1000-8000-00805F9B34FB_POWER-V1-1C0A": {
    "product_id": "697334b80d2b314595672ec7",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "Elux1"
   },
   "00000A4E-0000-1000-8000-00805F9B34FB_POWER-V1-4E0A": {
    "product_id": "697334962eea653545e75f76",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "Elux1"
   },
   "00000A04-0000-1000-8000-00805F9B34FB_POWER-040A": {
    "product_id": "696616806e5d2d32f80c2213",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark2500"
   },
   "00000A81-0000-1000-8000-00805F9B34FB_POWER-810A": {
    "product_id": "69661655ee97ef29c957be10",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark2500"
   },
   "0000CD04-0000-1000-8000-00805F9B34FB_POWER-04CD": {
    "product_id": "6964adc3466d41625541b46b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "DYNESS｜N067｜220v"
   },
   "0000CD81-0000-1000-8000-00805F9B34FB_POWER-81CD": {
    "product_id": "6964ada8bd022001be975e7e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "DYNESS｜N067｜110v"
   },
   "0000C302-0000-1000-8000-00805F9B34FB_POWER-02C3": {
    "product_id": "693b8ffd3f1a471b9dea83e7",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "WDF｜N095｜220v"
   },
   "00004A06-0000-1000-8000-00805F9B34FB_POWER-064A": {
    "product_id": "69364b9cc3b5c9bd9a1aafe8",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark2000"
   },
   "00004A83-0000-1000-8000-00805F9B34FB_POWER-834A": {
    "product_id": "69364b74ee97efa7b15ba9ad",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark2000"
   },
   "00000181-0000-1000-8000-00805F9B34FB_POWER-8101": {
    "product_id": "6931505ae0ec1959812dec62",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N098｜110v"
   },
   "00000104-0000-1000-8000-00805F9B34FB_POWER-0401": {
    "product_id": "6931504b8b0da4aae4f7e0bf",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N098｜220v"
   },
   "00008A82-0000-1000-8000-00805F9B34FB_POWER-828A": {
    "product_id": "692ff9e3466d41b6ab4e93de",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark7200"
   },
   "0000C104-0000-1000-8000-00805F9B34FB_POWER-04C1": {
    "product_id": "692416223f1a471b9d367f00",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N067 | SYD | 220v"
   },
   "0000C181-0000-1000-8000-00805F9B34FB_POWER-81C1": {
    "product_id": "692415db286f7c4cbb3485bb",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N067 | SYD | 110v"
   },
   "00000604-0000-1000-8000-00805F9B34FB_POWER-0406": {
    "product_id": "692413c00d2b31254ad46e29",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS064｜220v"
   },
   "00000681-0000-1000-8000-00805F9B34FB_POWER-8106": {
    "product_id": "692412b3a09a9bbb81875d0d",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS064｜110v"
   },
   "00008681-0000-1000-8000-00805F9B34FB_POWER-8186": {
    "product_id": "6923d9d12eea65a7373e66e7",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS068｜110v"
   },
   "00008604-0000-1000-8000-00805F9B34FB_POWER-0486": {
    "product_id": "6923d98cc3b5c983b52eac53",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS068｜220v"
   },
   "000083B2-0000-1000-8000-00805F9B34FB_POWER-V1-B283": {
    "product_id": "691421302139294f814fd77f",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "AF-P180 | 120v"
   },
   "00008181-0000-1000-8000-00805F9B34FB_POWER-8181": {
    "product_id": "69131b7ace5ec91013792327",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N109-A"
   },
   "00008104-0000-1000-8000-00805F9B34FB_POWER-0481": {
    "product_id": "69131b60f08210f2f1cc546e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N109-B"
   },
   "00008281-0000-1000-8000-00805F9B34FB_POWER-8182": {
    "product_id": "690d6c7d9755e3a59affe44e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "PS1200-A"
   },
   "00008204-0000-1000-8000-00805F9B34FB_POWER-0482": {
    "product_id": "690d6c43bd0220da8866f327",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "PS1200-B"
   },
   "0000831C-0000-1000-8000-00805F9B34FB_POWER-V1-1C83": {
    "product_id": "690c0f5c862066a338ea88a1",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "AF-P180 | 220v"
   },
   "0000834E-0000-1000-8000-00805F9B34FB_POWER-V1-4E83": {
    "product_id": "690c0f36286f7cfef640a5c5",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "AF-P180 | 110v"
   },
   "00004A7E-0000-1000-8000-00805F9B34FB_POWER-7E4A": {
    "product_id": "690bf387f2949cef37910617",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ABOK｜N078｜110v"
   },
   "00004D01-0000-1000-8000-00805F9B34FB_POWER-014D": {
    "product_id": "69081e408b0da4aae495b52e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "DAQING｜N078｜220v"
   },
   "0000C182-0000-1000-8000-00805F9B34FB_POWER-82C1": {
    "product_id": "68eb20b0189f86b5142fcb9c",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "SYD｜N085｜110v"
   },
   "0000C105-0000-1000-8000-00805F9B34FB_POWER-05C1": {
    "product_id": "68ea134a99c6240906e6b0a2",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "SYD｜N085｜220v"
   },
   "00004C7F-0000-1000-8000-00805F9B34FB_POWER-7F4C": {
    "product_id": "68d0c57609664cca982777f4",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "OffGrid Pro 7200"
   },
   "00004C02-0000-1000-8000-00805F9B34FB_POWER-024C": {
    "product_id": "68d0c551eef9cb5e0d649700",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "OffGrid Pro 7200 - B"
   },
   "000044B2-0000-1000-8000-00805F9B34FB_POWER-V1-B244": {
    "product_id": "68c900f52eea65b0f1bbbbba",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "F7200"
   },
   "00004181-0000-1000-8000-00805F9B34FB_POWER-8141": {
    "product_id": "68bff350f2949cb2ff0d0029",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "SYD｜N069｜110v"
   },
   "00004104-0000-1000-8000-00805F9B34FB_POWER-0441": {
    "product_id": "68bff32809664cca98a4af62",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "SYD｜N069｜220v"
   },
   "0000C319-0000-1000-8000-00805F9B34FB_POWER-V1-19C3": {
    "product_id": "68bc0589a674f439f975d3ff",
    "category_id": "681c188bc3b5c9ba15217b9d",
    "protocol_version": 1,
    "modbus_address": 18,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "YT003 | 220v"
   },
   "00004B7F-0000-1000-8000-00805F9B34FB_POWER-7F4B": {
    "product_id": "68a52a56f08210a1febcbfe0",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "JIUYI｜N086｜110v"
   },
   "00004B02-0000-1000-8000-00805F9B34FB_POWER-024B": {
    "product_id": "68a52a40816a3feaea8e8c47",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "JIUYI｜N086｜220v"
   },
   "00004D7E-0000-1000-8000-00805F9B34FB_POWER-7E4D": {
    "product_id": "68a52927466d413f7006ff7e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "DYNESS｜N078｜110v"
   },
   "00004A01-0000-1000-8000-00805F9B34FB_POWER-014A": {
    "product_id": "68a5290da7c43263da6fc717",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ABOK｜N078｜220v"
   },
   "00008419-0000-1000-8000-00805F9B34FB_POWER-V1-1984": {
    "product_id": "688b0684213929ab1d969fae",
    "category_id": "681c188bc3b5c9ba15217b9d",
    "protocol_version": 1,
    "modbus_address": 18,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "QICHANG｜YT002｜220v"
   },
   "00004119-0000-1000-8000-00805F9B34FB_POWER-V1-1941": {
    "product_id": "688b066cf08210a1fe28c0f5",
    "category_id": "681c188bc3b5c9ba15217b9d",
    "protocol_version": 1,
    "modbus_address": 18,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "YT800 | 220v"
   },
   "0000439B-0000-1000-8000-00805F9B34FB_POWER-9B43": {
    "product_id": "68896faa7ad52db7e74becd5",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "AF-P280｜120v"
   },
   "00000204-0000-1000-8000-00805F9B34FB_POWER-0402": {
    "product_id": "68805e41c3b5c9ccb022467c",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N098｜220v"
   },
   "00000281-0000-1000-8000-00805F9B34FB_POWER-8102": {
    "product_id": "68805e2b3f1a470b6e11369a",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N098｜110v"
   },
   "00004382-0000-1000-8000-00805F9B34FB_POWER-8243": {
    "product_id": "68805a56337a9f512185c24e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "AF-P280｜110v"
   },
   "00004305-0000-1000-8000-00805F9B34FB_POWER-0543": {
    "product_id": "68805a2cfe975fd64c840d91",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "AF-P280｜220v"
   },
   "00004435-0000-1000-8000-00805F9B34FB_POWER-V1-3544": {
    "product_id": "6878d761a674f4a2c75b493a",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "F7200"
   },
   "0000011C-0000-1000-8000-00805F9B34FB_POWER-V1-1C01": {
    "product_id": "686f6fbc149854d2e0e803c3",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "N104｜220v"
   },
   "0000014E-0000-1000-8000-00805F9B34FB_POWER-V1-4E01": {
    "product_id": "686f649b1c90b6a2f1826903",
    "category_id": "68b17ab3e0ec192f194bf7a1",
    "protocol_version": 1,
    "modbus_address": 17,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "N104｜110v"
   },
   "00004132-0000-1000-8000-00805F9B34FB_POWER-V1-3241": {
    "product_id": "68648ac17ad52db7e780377b",
    "category_id": "681c188bc3b5c9ba15217b9d",
    "protocol_version": 1,
    "modbus_address": 18,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "YT800 | 220v"
   },
   "0000847F-0000-1000-8000-00805F9B34FB_POWER-7F84": {
    "product_id": "68633c4509664cca9857be6a",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F400-A"
   },
   "00008402-0000-1000-8000-00805F9B34FB_POWER-0284": {
    "product_id": "68633c2d189f86d5e1c22e51",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F400-B"
   },
   "00008A01-0000-1000-8000-00805F9B34FB_POWER-018A": {
    "product_id": "686229347ad52db7e73daf81",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark3600"
   },
   "00008A7E-0000-1000-8000-00805F9B34FB_POWER-7E8A": {
    "product_id": "6862291fce5ec90ca6f4219f",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Ark3600"
   },
   "00008900-0000-1000-8000-00805F9B34FB_POWER-0089": {
    "product_id": "68620c98eef9cbdc97211d28",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Nomaad Atlas 2400-B"
   },
   "0000897D-0000-1000-8000-00805F9B34FB_POWER-7D89": {
    "product_id": "68620c5af08210a1fee9032e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Nomaad Atlas 2400-A"
   },
   "00008502-0000-1000-8000-00805F9B34FB_POWER-0285": {
    "product_id": "683e50e57c8de468d196abd0",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N094｜220v"
   },
   "0000857F-0000-1000-8000-00805F9B34FB_POWER-7F85": {
    "product_id": "683e50b7bd02209f5b27c7ea",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N094｜110v"
   },
   "00008432-0000-1000-8000-00805F9B34FB_POWER-V1-3284": {
    "product_id": "6836781f6e5d2d42e67c09e6",
    "category_id": "681c188bc3b5c9ba15217b9d",
    "protocol_version": 1,
    "modbus_address": 18,
-   "modbus_count": 100
+   "modbus_count": 100,
+   "model": "QICHANG｜YT002｜220v"
   },
   "0000487E-0000-1000-8000-00805F9B34FB_POWER-7E48": {
    "product_id": "67f7a48e652341f3abf65ac3",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "QINGZHOU｜EP1800｜110v"
   },
   "00004801-0000-1000-8000-00805F9B34FB_POWER-0148": {
    "product_id": "67f7a471149854a900c6f8cc",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "QINGZHOU｜EP1800｜220v"
   },
   "00000482-0000-1000-8000-00805F9B34FB_POWER-8204": {
    "product_id": "67ea59367c8de442a9d79866",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "QICHANG｜N080｜110v"
   },
   "00000405-0000-1000-8000-00805F9B34FB_POWER-0504": {
    "product_id": "67ea591b7ad52d3f79d3f75f",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "QICHANG｜N080｜220v"
   },
   "0000877F-0000-1000-8000-00805F9B34FB_POWER-7F87": {
    "product_id": "67ea3f018b0da4a80c36f01d",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Hope Power 400-A"
   },
   "00008702-0000-1000-8000-00805F9B34FB_POWER-0287": {
    "product_id": "67ea3ee0149854a9001cc0aa",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Hope Power 400-B"
   },
   "00004300-0000-1000-8000-00805F9B34FB_POWER-0043": {
    "product_id": "67e21df1a674f48993c1a7f1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "WDF｜N064｜220v"
   },
   "0000437D-0000-1000-8000-00805F9B34FB_POWER-7D43": {
    "product_id": "67e21db8fe975fc54fdea70b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "WDF｜N064｜110v"
   },
   "00008180-0000-1000-8000-00805F9B34FB_POWER-8081": {
    "product_id": "67d8c2a86e5d2d6acddba32c",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "SYD｜N079｜110v"
   },
   "00008103-0000-1000-8000-00805F9B34FB_POWER-0381": {
    "product_id": "67d8c28c466d41ded4ad1f90",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "SYD｜N079｜220v"
   },
   "0000C604-0000-1000-8000-00805F9B34FB_POWER-04C6": {
    "product_id": "67cf8e320d2b317c59dbb8cc",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS067｜220v"
   },
   "0000C681-0000-1000-8000-00805F9B34FB_POWER-81C6": {
    "product_id": "67cf8e198b0da45f0156869b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS067｜110v"
   },
   "00004681-0000-1000-8000-00805F9B34FB_POWER-8146": {
    "product_id": "67cea633337a9f4a9fa677e1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS061｜110v"
   },
   "00004604-0000-1000-8000-00805F9B34FB_POWER-0446": {
    "product_id": "67cea617b9fb2371a7261247",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS061 | 220v"
   },
   "0000867D-0000-1000-8000-00805F9B34FB_POWER-7D86": {
    "product_id": "67cea0098a5c78c37f74e422",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS008 | 110v"
   },
   "00008600-0000-1000-8000-00805F9B34FB_POWER-0086": {
    "product_id": "67ce9ff2466d41ded46bcd44",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS008 | 220v"
   },
   "0000467D-0000-1000-8000-00805F9B34FB_POWER-7D46": {
    "product_id": "67ce9fc2286f7c0f8c9c494c",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS009｜110v"
   },
   "00004600-0000-1000-8000-00805F9B34FB_POWER-0046": {
    "product_id": "67ce9fab99c62422a893435b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS009 | 220v"
   },
   "00004601-0000-1000-8000-00805F9B34FB_POWER-0146": {
    "product_id": "67ce9e99fe975fc54f47fd51",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS065 | 220v"
   },
   "0000467E-0000-1000-8000-00805F9B34FB_POWER-7E46": {
    "product_id": "67ce9e86a09a9b5aa59c7749",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS065｜110v"
   },
   "0000867E-0000-1000-8000-00805F9B34FB_POWER-7E86": {
    "product_id": "67ce9d68f08210ad575e5402",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS066｜110v"
   },
   "00008601-0000-1000-8000-00805F9B34FB_POWER-0186": {
    "product_id": "67ce9d56466d41ded46b70ec",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS066 | 220v"
   },
   "00004602-0000-1000-8000-00805F9B34FB_POWER-0246": {
    "product_id": "67ce9bff652341e489dafde5",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS069 | 220v"
   },
   "0000467F-0000-1000-8000-00805F9B34FB_POWER-7F46": {
    "product_id": "67ce9be5149854207f96706d",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS069 | 110v"
   },
   "0000077E-0000-1000-8000-00805F9B34FB_POWER-7E07": {
    "product_id": "67ce9bad8b0da45f013a2e83",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Adventure Energy 1200-A"
   },
   "00000701-0000-1000-8000-00805F9B34FB_POWER-0107": {
    "product_id": "67ce9b9999c62422a892b11b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Adventure Energy 1200-B"
   },
   "00008701-0000-1000-8000-00805F9B34FB_POWER-0187": {
    "product_id": "67ce9b63a7c4328611e37ad1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Freedom Solar 3600-B"
   },
   "0000877E-0000-1000-8000-00805F9B34FB_POWER-7E87": {
    "product_id": "67ce9b45337a9f4a9fa4e4f2",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Freedom Solar 3600-A"
   },
   "00008700-0000-1000-8000-00805F9B34FB_POWER-0087": {
    "product_id": "67ce99f03d029caca12a23d1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Pathfinder Power 2400-B"
   },
   "0000877D-0000-1000-8000-00805F9B34FB_POWER-7D87": {
    "product_id": "67ce99d17c8de46baf6e32d1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Pathfinder Power 2400-A"
   },
   "0000477F-0000-1000-8000-00805F9B34FB_POWER-7F47": {
    "product_id": "67ce999aee97ef1479b99f26",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Titan Power 7200-A"
   },
   "00004702-0000-1000-8000-00805F9B34FB_POWER-0247": {
    "product_id": "67ce9973eef9cbda9c3631e3",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "Titan Power 7200-B"
   },
   "00000480-0000-1000-8000-00805F9B34FB_POWER-8004": {
    "product_id": "67ce956b149854207f95801e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F7200"
   },
   "0000457E-0000-1000-8000-00805F9B34FB_POWER-7E45": {
    "product_id": "67877760b9fb2371a7c2eb3f",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N078｜110v"
   },
   "00004501-0000-1000-8000-00805F9B34FB_POWER-0145": {
    "product_id": "678776f799c62422a8283d26",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N078｜220v"
   },
   "00008603-0000-1000-8000-00805F9B34FB_POWER-0386": {
    "product_id": "6784becba09a9b4de0f64c37",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS006 | 220v"
   },
   "00008680-0000-1000-8000-00805F9B34FB_POWER-8086": {
    "product_id": "6784beabb9fb2371a7836016",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS006 | 110v"
   },
   "0000C603-0000-1000-8000-00805F9B34FB_POWER-03C6": {
    "product_id": "6784be7a862066d08cad208e",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS005 | 220v"
   },
   "0000C680-0000-1000-8000-00805F9B34FB_POWER-80C6": {
    "product_id": "6784be52466d41ded4c0e639",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "BS005｜110v"
   },
   "00008503-0000-1000-8000-00805F9B34FB_POWER-0385": {
    "product_id": "677e411a337a9fb371d14ab2",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N088｜220v"
   },
   "00008580-0000-1000-8000-00805F9B34FB_POWER-8085": {
    "product_id": "677e40f8f2949cf7211c0310",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N088｜110v"
   },
   "0000857E-0000-1000-8000-00805F9B34FB_POWER-7E85": {
    "product_id": "677c8580a7c43286117fc6c6",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N066｜110v"
   },
   "00008501-0000-1000-8000-00805F9B34FB_POWER-0185": {
    "product_id": "677c855f09664cc2d4ad5795",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "INDIANS｜N066｜220v"
   },
   "0000827E-0000-1000-8000-00805F9B34FB_POWER-7E82": {
    "product_id": "6729b81fa09a9bb752c4a381",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N066｜110v"
   },
   "00008201-0000-1000-8000-00805F9B34FB_POWER-0182": {
    "product_id": "6729b809bd0220786d1242eb",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N066｜220v"
   },
   "00008280-0000-1000-8000-00805F9B34FB_POWER-8082": {
    "product_id": "6729b73c3d029cf3232af330",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N079｜110v"
   },
   "00008203-0000-1000-8000-00805F9B34FB_POWER-0382": {
    "product_id": "6729b6e9466d417f94f85540",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N079｜220v"
   },
   "00008301-0000-1000-8000-00805F9B34FB_POWER-0183": {
    "product_id": "66f2a188337a9f907c296cf9",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "P310-B3E01"
   },
   "0000837E-0000-1000-8000-00805F9B34FB_POWER-7E83": {
    "product_id": "66f2a163f08210abab0ed263",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "P310-A3E01"
   },
   "00000403-0000-1000-8000-00805F9B34FB_POWER-0304": {
    "product_id": "66eb7980b9fb2347e838ea57",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F7200"
   },
   "00008400-0000-1000-8000-00805F9B34FB_POWER-0084": {
    "product_id": "66bdbc320d2b313577dd5600",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F2400-B"
   },
   "0000847D-0000-1000-8000-00805F9B34FB_POWER-7D84": {
    "product_id": "66bdbc121c90b65e43ee6047",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F2400-A"
   },
   "00004303-0000-1000-8000-00805F9B34FB_POWER-0343": {
    "product_id": "66975d1f0d2b315faf1e5322",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "P210-B0E01"
   },
   "00004380-0000-1000-8000-00805F9B34FB_POWER-8043": {
    "product_id": "66975cf8f2949c511f549c39",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "P210-A0E01"
   },
   "00004201-0000-1000-8000-00805F9B34FB_POWER-0142": {
    "product_id": "666bbbf88a5c7863b1da6aa2",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N078｜220v"
   },
   "0000427E-0000-1000-8000-00805F9B34FB_POWER-7E42": {
    "product_id": "666bbbe7466d41f585053cc0",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "ITWORLD｜N078｜110v"
   },
   "0000C101-0000-1000-8000-00805F9B34FB_POWER-01C1": {
    "product_id": "6667b20f8a5c7863b13540fc",
    "category_id": "661f98117ad52dfccc6a67d9",
-   "protocol_version": 0,
+   "protocol_version": 1,
    "modbus_address": 21,
-   "modbus_count": 30
+   "modbus_count": 30,
+   "model": "PS001｜220v"
   },
   "0000C17E-0000-1000-8000-00805F9B34FB_POWER-7EC1": {
    "product_id": "6667b1fa652341bc2fa940d2",
    "category_id": "661f98117ad52dfccc6a67d9",
-   "protocol_version": 0,
+   "protocol_version": 1,
    "modbus_address": 21,
-   "modbus_count": 30
+   "modbus_count": 30,
+   "model": "PS001｜110v"
   },
   "00004102-0000-1000-8000-00805F9B34FB_POWER-0241": {
    "product_id": "6661329c6e5d2ddb51e27401",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N086｜220v"
   },
   "0000417F-0000-1000-8000-00805F9B34FB_POWER-7F41": {
    "product_id": "666132870d2b315faf305643",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N086｜120v/240v"
   },
   "00008102-0000-1000-8000-00805F9B34FB_POWER-0281": {
    "product_id": "665592928b0da4a4e46abe7a",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N094｜220v"
   },
   "0000817F-0000-1000-8000-00805F9B34FB_POWER-7F81": {
    "product_id": "6655927709664cbba0a4f6a6",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N094｜110v"
   },
   "0000017F-0000-1000-8000-00805F9B34FB_POWER-7F01": {
    "product_id": "6618eb546e5d2ddb5186bf39",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F3600Pro-A"
   },
   "00000102-0000-1000-8000-00805F9B34FB_POWER-0201": {
    "product_id": "6618eadb09664cbba02d1a17",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "F3600Pro-B"
   },
   "0000C17D-0000-1000-8000-00805F9B34FB_POWER-7DC1": {
    "product_id": "661647408620667bb48b2c7b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N029｜110v"
   },
   "0000017E-0000-1000-8000-00805F9B34FB_POWER-7E01": {
    "product_id": "661646d2e0ec199b1827c55b",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N033｜110v"
   },
   "0000817D-0000-1000-8000-00805F9B34FB_POWER-7D81": {
    "product_id": "6616466f652341ed5e3000af",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N052｜110v"
   },
   "0000417E-0000-1000-8000-00805F9B34FB_POWER-7E41": {
    "product_id": "6615076ae0ec199b18e90a1a",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N078｜110v"
   },
   "0000817E-0000-1000-8000-00805F9B34FB_POWER-7E81": {
    "product_id": "66028fbdfe975f74404ca3fa",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N066｜110v"
   },
   "00008101-0000-1000-8000-00805F9B34FB_POWER-0181": {
    "product_id": "66028f5d99c6244dcf30e390",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N066｜220v"
   },
   "0000417D-0000-1000-8000-00805F9B34FB_POWER-7D41": {
    "product_id": "65f9361609664cbba081b0d4",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N051｜110v"
   },
   "00004101-0000-1000-8000-00805F9B34FB_POWER-0141": {
    "product_id": "658d483dfe975f47a501ad69",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N078｜220v"
   },
   "00004100-0000-1000-8000-00805F9B34FB_POWER-0041": {
    "product_id": "658d47da21821b50af8206dc",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N051｜220v"
   },
   "0000C100-0000-1000-8000-00805F9B34FB_POWER-00C1": {
    "product_id": "658d4776213929458d1693ef",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N029 portable power station"
   },
   "00000101-0000-1000-8000-00805F9B34FB_POWER-0101": {
    "product_id": "658d46fe862066f18a1418e1",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N033 portable power station"
   },
   "00008100-0000-1000-8000-00805F9B34FB_POWER-0081": {
    "product_id": "658d46687ad52d59324fdc6d",
    "category_id": "658d429921821b50af80ff4d",
    "protocol_version": 0,
    "modbus_address": 17,
-   "modbus_count": 80
+   "modbus_count": 80,
+   "model": "N052 portable power station"
   }
  }
 }

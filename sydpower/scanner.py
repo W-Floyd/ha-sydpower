@@ -54,6 +54,7 @@ class DiscoveredDevice:
     modbus_address: int     # Modbus slave address (from catalog or default)
     modbus_count: int       # bulk-read register count (from catalog or default)
     protocol_version: int   # 0 = legacy, 1+ = extended write format
+    model: str | None = None  # OEM model code from the catalog, if known
 
 
 def _parse_advertisement(
@@ -81,6 +82,7 @@ def _parse_advertisement(
     modbus_address   = params["modbus_address"]   if params else DEFAULT_MODBUS_ADDRESS
     modbus_count     = params["modbus_count"]     if params else DEFAULT_MODBUS_COUNT
     protocol_version = params["protocol_version"] if params else 1
+    model = _catalog.get_product_model(product_key)
 
     # Parse the advertisement payload for the device ID, init status, and
     # optional serial number.
@@ -143,6 +145,7 @@ def _parse_advertisement(
         modbus_address=modbus_address,
         modbus_count=modbus_count,
         protocol_version=protocol_version,
+        model=model,
     )
 
 

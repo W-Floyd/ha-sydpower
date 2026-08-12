@@ -148,6 +148,36 @@ class TestProtocolFunctions:
             )
 
 
+class TestCatalogModel:
+    """
+    Test model resolution from the shipped catalog.
+
+    The catalog carries no consumer brand — its largest group is the OEM's
+    white-label bucket and resellers such as AFERIY do not appear in it — so the
+    model code is the only identity available.
+    """
+
+    def test_known_product_resolves_to_a_model(self):
+        from sydpower.catalog import get_product_model
+
+        model = get_product_model("00004380-0000-1000-8000-00805F9B34FB_POWER-8043")
+        assert model == "P210-A0E01"
+
+    def test_unknown_product_returns_none(self):
+        from sydpower.catalog import get_product_model
+
+        assert get_product_model("00000000-0000-0000-0000-000000000000_NOPE") is None
+
+    def test_every_catalog_product_has_a_model(self):
+        """A product without a model would silently show a blank in the UI."""
+        from sydpower.catalog import get_product_model, list_product_keys
+
+        keys = list_product_keys()
+        assert keys, "catalog is empty"
+        missing = [k for k in keys if not get_product_model(k)]
+        assert not missing, f"{len(missing)} product(s) lack a model, e.g. {missing[:3]}"
+
+
 class TestAdvertisementParsing:
     """
     Test recovery of the device MAC from the advertisement payload.

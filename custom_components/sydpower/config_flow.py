@@ -15,10 +15,11 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ADDRESS
 
 from sydpower.constants import DEVICE_NAME_PREFIXES
-from sydpower.catalog import get_device_params
+from sydpower.catalog import get_device_params, get_product_model
 
 from .const import (
     CONF_MODBUS_ADDRESS,
+    CONF_MODEL,
     CONF_MODBUS_COUNT,
     CONF_NAME,
     CONF_PRODUCT_KEY,
@@ -49,6 +50,8 @@ def _params_from_service_info(
         CONF_ADDRESS: service_info.address,
         CONF_NAME: service_info.name,
         CONF_PRODUCT_KEY: product_key,
+        # Resolved once here rather than on every entity construction.
+        CONF_MODEL: get_product_model(product_key) if product_key else None,
         CONF_MODBUS_ADDRESS: params["modbus_address"] if params else DEFAULT_MODBUS_ADDRESS,
         CONF_MODBUS_COUNT: params["modbus_count"] if params else DEFAULT_MODBUS_COUNT,
         CONF_PROTOCOL_VERSION: params["protocol_version"] if params else 1,
