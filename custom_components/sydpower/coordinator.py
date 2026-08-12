@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
@@ -12,12 +13,17 @@ from bleak_retry_connector import BleakClientWithServiceCache, establish_connect
 
 from homeassistant.components import bluetooth
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from sydpower import SydpowerDevice
 from sydpower.exceptions import SydpowerError
 
 from .const import POLL_INTERVAL
+
+# Seconds to wait after a write before reading back, so the refresh reflects the
+# change rather than the pre-write state.
+WRITE_SETTLE_DELAY = 1.0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -80,11 +86,15 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
 
     # ── Polling ───────────────────────────────────────────────────────────────
 
-    async def _async_update_data(self) -> SydpowerData:
-        """Read both register banks, raising ``UpdateFailed`` on any error."""
-        ble_device = self._connectable_device()
+    def _device(self, ble_device: BLEDevice) -> SydpowerDevice:
+        """
+        Build a library device that connects through Home Assistant's stack.
 
-        device = SydpowerDevice(
+        The injected factory is what allows an ESPHome Bluetooth proxy to carry
+        the connection, and routing all I/O through ``SydpowerDevice`` means the
+        library's write allowlist applies to Home Assistant too.
+        """
+        return SydpowerDevice(
             ble_device,
             modbus_address=self._modbus_address,
             modbus_count=self._modbus_count,
@@ -97,6 +107,11 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
             ),
         )
 
+    async def _async_update_data(self) -> SydpowerData:
+        """Read both register banks, raising ``UpdateFailed`` on any error."""
+        ble_device = self._connectable_device()
+        device = self._device(ble_device)
+
         try:
             async with device:
                 holding = await device.read_holding_registers()
@@ -105,6 +120,50 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
             raise UpdateFailed(f"{self._device_name}: {err}") from err
 
         return SydpowerData(holding=holding, input=input_regs)
+
+    # ── Writing ───────────────────────────────────────────────────────────────
+
+    async def async_write_register(self, register: int, value: int) -> None:
+        """
+        Write a single holding register, then refresh so entities reflect it.
+
+        Raises ``HomeAssistantError`` on failure so the originating service call
+        surfaces the reason in the UI rather than failing silently.
+        ``UnsafeRegisterWriteError`` is included deliberately: a rejected write
+        is a bug in this integration, not a device fault, and it must be visible.
+        """
+        ble_device = self._connectable_device_or_error()
+        device = self._device(ble_device)
+
+        _LOGGER.debug(
+            "Writing holding register %d = %d on %s",
+            register,
+            value,
+            self._device_name,
+        )
+        try:
+            async with device:
+                await device.write_register(register, value)
+        except (SydpowerError, BleakError, TimeoutError) as err:
+            raise HomeAssistantError(
+                f"Failed to write register {register} on {self._device_name}: {err}"
+            ) from err
+
+        # The device needs a moment to apply the change before it reads back.
+        await asyncio.sleep(WRITE_SETTLE_DELAY)
+        await self.async_request_refresh()
+
+    def _connectable_device_or_error(self) -> BLEDevice:
+        """As ``_connectable_device`` but raising for a user-initiated action."""
+        ble_device = bluetooth.async_ble_device_from_address(
+            self.hass, self.address, connectable=True
+        )
+        if ble_device is None:
+            raise HomeAssistantError(
+                f"No connectable Bluetooth adapter or proxy can reach "
+                f"{self.address}: {self._reachability_reason()}"
+            )
+        return ble_device
 
     def _connectable_device(self) -> BLEDevice:
         """
