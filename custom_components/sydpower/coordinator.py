@@ -12,6 +12,7 @@ from bleak.exc import BleakError
 from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
 
 from homeassistant.components import bluetooth
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -66,6 +67,7 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
     def __init__(
         self,
         hass: HomeAssistant,
+        entry: ConfigEntry,
         address: str,
         name: str,
         modbus_address: int,
@@ -77,6 +79,9 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
             _LOGGER,
             name=f"Sydpower {name}",
             update_interval=timedelta(seconds=POLL_INTERVAL),
+            # Required by recent Home Assistant cores; it ties the coordinator's
+            # background refresh to the config entry's lifecycle.
+            config_entry=entry,
         )
         self.address = address
         self._device_name = name

@@ -50,6 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = SydpowerCoordinator(
         hass=hass,
+        entry=entry,
         address=address,
         name=entry.data[CONF_NAME],
         modbus_address=entry.data[CONF_MODBUS_ADDRESS],
