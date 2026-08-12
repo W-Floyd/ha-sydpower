@@ -264,3 +264,14 @@ venv/
 sydpower/dist/
 sydpower/build/
 sydpower/*.egg-info/
+
+# Catalog extraction working files: unpacked APK, beautified bundle, API caches
+# and the cached session token. Large, regenerable, and the token is a secret.
+analysis/build/
+*.xapk
+*.apk
+
+# Credentials for the catalog extractor's authenticated endpoints. Never commit.
+.env
+*.env
+!.env.example

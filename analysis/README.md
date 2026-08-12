@@ -201,3 +201,24 @@ Register 50 is the panel firmware version — the app's constant is
 `Panel_Version`, though it posts the same register to its backend as
 `DC_version`. Versions are tenths, so a register value of 29 is v2.9. The four
 version registers are 47 (AC), 48 (BMS), 49 (PV) and 50 (panel).
+
+### Signing in
+
+`--login` obtains a user token for the authenticated actions:
+
+```bash
+python extract_catalog.py --xapk app.xapk --login
+```
+
+It reads `BRIGHTEMS_USER` and `BRIGHTEMS_PASSWORD` from the environment, or
+prompts for anything missing. The password is deliberately **not** accepted as a
+command-line argument: argv is visible to other processes on the machine and ends
+up in shell history. It is read with `getpass`, never echoed, and never logged.
+
+The resulting token is cached in `build/api/user_token.json` with mode 600 and
+reused on later runs; `--refresh` obtains a fresh one. `build/` is gitignored, so
+neither the token nor the unpacked app is committed.
+
+Login posts `{username, password}` to `client/user/pub/login`; the backend
+resolves whether the identifier is a username, an email address or a mobile
+number, so one field covers all three.

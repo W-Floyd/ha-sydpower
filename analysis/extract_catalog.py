@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import hmac
+import getpass
 import json
 import os
 import re
@@ -250,6 +251,85 @@ def post(
     sys.exit(f"request failed after {attempts} attempts: {last}")
 
 
+# vk-unicloud resolves the identifier itself, so one field covers a username, a
+# mobile number or an email address.
+LOGIN_ACTION = "client/user/pub/login"
+
+
+def login(config: dict[str, str], locale: str, anon_token: str) -> str:
+    """
+    Exchange credentials for a user token.
+
+    Credentials come from BRIGHTEMS_USER / BRIGHTEMS_PASSWORD, or an interactive
+    prompt. They are never echoed, never logged, and never passed on a command
+    line — a password in argv would be visible to other processes and would land
+    in shell history.
+    """
+    username = os.environ.get("BRIGHTEMS_USER")
+    password = os.environ.get("BRIGHTEMS_PASSWORD")
+    if not username:
+        username = input("BrightEMS account (username, email or mobile): ").strip()
+    if not password:
+        password = getpass.getpass("BrightEMS password (not echoed): ")
+    if not (username and password):
+        sys.exit("no credentials supplied")
+
+    body = post(
+        config,
+        {
+            "method": "serverless.function.runtime.invoke",
+            "params": json.dumps(
+                {
+                    "functionTarget": ROUTER_FUNCTION,
+                    "functionArgs": {
+                        "$url": LOGIN_ACTION,
+                        "data": {"username": username, "password": password},
+                        "encrypt": False,
+                    },
+                },
+                separators=(",", ":"),
+            ),
+        },
+        locale,
+        anon_token,
+    )
+    result = body.get("data", body)
+    if result.get("code") not in (0, None):
+        # Deliberately does not echo the response wholesale: it can contain the
+        # submitted account.
+        sys.exit(f"login failed: code {result.get('code')} {result.get('msg', '')}")
+
+    token = result.get("token") or (result.get("userInfo") or {}).get("token")
+    if not token:
+        sys.exit(f"login succeeded but returned no token; keys: {sorted(result)}")
+    log("login", "user token acquired")
+    return token
+
+
+def load_user_token(
+    config: dict[str, str],
+    locale: str,
+    cache: Path,
+    anon_token: str,
+    do_login: bool,
+    refresh: bool,
+) -> str | None:
+    """Return a cached user token, logging in only if asked to."""
+    path = cache / "user_token.json"
+    if path.exists() and not refresh:
+        log("auth", "using cached user token")
+        return json.loads(path.read_text()).get("token")
+    if not do_login:
+        return None
+
+    token = login(config, locale, anon_token)
+    cache.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"token": token}))
+    path.chmod(0o600)
+    log("auth", f"token cached in {path.name} (mode 600)")
+    return token
+
+
 def get_access_token(config: dict[str, str], locale: str) -> str:
     """
     Obtain an anonymous access token.
@@ -305,6 +385,7 @@ def fetch(
     cache: Path,
     refresh: bool,
     user_token: str | None = None,
+    do_login: bool = False,
 ) -> dict[str, Any]:
     """
     Return the raw API payloads, fetching only what is not already cached.
@@ -316,11 +397,18 @@ def fetch(
     payloads: dict[str, Any] = {}
     token: str | None = None
 
+    if not user_token and do_login:
+        token = get_access_token(config, locale)
+        user_token = load_user_token(config, locale, cache, token, do_login, refresh)
+
     wanted = dict(ACTIONS)
     if user_token:
         wanted.update(AUTHENTICATED_ACTIONS)
     else:
-        log("fetch", "no --token: skipping " + ", ".join(AUTHENTICATED_ACTIONS))
+        log(
+            "fetch",
+            "skipping " + ", ".join(AUTHENTICATED_ACTIONS) + " (needs --login or --token)",
+        )
 
     for name, action in wanted.items():
         path = cache / f"{name}.{locale}.json"
@@ -412,7 +500,7 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
         catalog["firmware_gates"] = {"ac_standby_time": gates}
         log("build", f"{len(gates)} firmware gate rule(s)")
     else:
-        log("build", "no firmware gate rules (needs --token)")
+        log("build", "no firmware gate rules (needs --login or --token)")
 
     for category in detail.get("category_list_all", []):
         catalog["categories"][category["_id"]] = {
@@ -541,6 +629,15 @@ def main() -> int:
     parser.add_argument("--locale", default="en", help="locale requested from the backend")
     parser.add_argument("--refresh", action="store_true", help="ignore cached API responses")
     parser.add_argument(
+        "--login",
+        action="store_true",
+        help=(
+            "sign in to fetch the firmware gate table and fault codes. Reads "
+            "BRIGHTEMS_USER / BRIGHTEMS_PASSWORD or prompts; the password is "
+            "never taken on the command line, echoed, or logged."
+        ),
+    )
+    parser.add_argument(
         "--token",
         default=os.environ.get("BRIGHTEMS_TOKEN"),
         help=(
@@ -588,7 +685,7 @@ def main() -> int:
     if args.stage == "config":
         return 0
 
-    payloads = fetch(config, args.locale, args.workdir / "api", args.refresh, args.token)
+    payloads = fetch(config, args.locale, args.workdir / "api", args.refresh, args.token, args.login)
     if args.stage == "fetch":
         return 0
 
