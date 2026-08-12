@@ -15,6 +15,7 @@ from bleak.backends.device import BLEDevice
 from sydpower import (
     WRITABLE_HOLDING_REGISTERS,
     DiscoveredDevice,
+    RegisterResponse,
     ResponseBuffer,
     SydpowerDevice,
     build_read_holding_registers,
@@ -147,6 +148,59 @@ class TestProtocolFunctions:
             )
 
 
+class TestAdvertisementParsing:
+    """
+    Test recovery of the device MAC from the advertisement payload.
+
+    These devices put their payload directly into the AD structure, so bleak
+    parses its first two bytes as a manufacturer company ID and strips them into
+    the dict key. Both bytes are payload, so they must be put back or every
+    field shifts by one byte.
+    """
+
+    def _adv(self, **overrides):
+        from bleak.backends.scanner import AdvertisementData
+
+        kwargs = dict(
+            local_name="POWER-8043",
+            manufacturer_data={},
+            service_data={},
+            service_uuids=["00004380-0000-1000-8000-00805f9b34fb"],
+            tx_power=None,
+            rssi=-55,
+            platform_data=(),
+        )
+        kwargs.update(overrides)
+        return AdvertisementData(**kwargs)
+
+    def test_mac_recovered_from_manufacturer_data(self):
+        """
+        Regression test using bytes captured from real hardware.
+
+        On air: 99 50 78 7D BA A6 5A 00 — a 0x99 legacy prefix, the six MAC
+        octets, then the init-status byte. bleak reports company id 0x5099 with
+        remainder 787dbaa65a00. Home Assistant's Bluetooth stack independently
+        reports this device as 50:78:7D:BA:A6:5A, which is the expected result;
+        parsing the remainder alone yielded 78:7D:BA:A6:5A:00, shifted by one.
+        """
+        from sydpower.scanner import _parse_advertisement
+
+        device = BLEDevice("50:78:7D:BA:A6:5A", "POWER-8043", None)
+        adv = self._adv(manufacturer_data={0x5099: bytes.fromhex("787dbaa65a00")})
+
+        parsed = _parse_advertisement(device, adv)
+
+        assert parsed is not None
+        assert parsed.advertis == "50:78:7D:BA:A6:5A"
+        assert parsed.init_status == 0
+
+    def test_non_sydpower_name_ignored(self):
+        from sydpower.scanner import _parse_advertisement
+
+        device = BLEDevice("AA:BB:CC:DD:EE:FF", "SomeOtherDevice", None)
+        assert _parse_advertisement(device, self._adv(local_name="SomeOther")) is None
+
+
 class TestResponseFunctionCodeMatching:
     """
     A response must match the function code that was requested.
@@ -169,20 +223,43 @@ class TestResponseFunctionCodeMatching:
         )
         assert buf.feed(self._frame(0x03)) is True
 
-    def test_input_response_rejected_for_holding_request(self):
-        """The desync that produced garbage register data on real hardware."""
+    def test_input_response_not_accepted_for_holding_request(self):
+        """
+        The desync that produced garbage register data on real hardware.
+
+        The wrong bank must never be reported as complete; it is discarded and
+        the buffer keeps waiting.
+        """
         buf = ResponseBuffer(
             modbus_address=17, expected_func_code=0x03, protocol_version=0
         )
-        with pytest.raises(ProtocolError, match="desynchronised"):
-            buf.feed(self._frame(0x04))
+        assert buf.feed(self._frame(0x04)) is False
 
-    def test_holding_response_rejected_for_input_request(self):
+    def test_holding_response_not_accepted_for_input_request(self):
         buf = ResponseBuffer(
             modbus_address=17, expected_func_code=0x04, protocol_version=0
         )
-        with pytest.raises(ProtocolError, match="desynchronised"):
-            buf.feed(self._frame(0x03))
+        assert buf.feed(self._frame(0x03)) is False
+
+    def test_resyncs_after_a_stale_write_echo(self):
+        """
+        A queued write echo can be delivered ahead of the reply we asked for.
+
+        This is the exact sequence seen on hardware: a register-66 write echo
+        arrived on the connection opened for the following read. The buffer must
+        discard it and still accept the real response.
+        """
+        buf = ResponseBuffer(
+            modbus_address=17, expected_func_code=0x03, protocol_version=0
+        )
+        stale_echo = bytes.fromhex("110600420064a52a")
+
+        assert buf.feed(stale_echo) is False
+        assert buf.feed(self._frame(0x03)) is True
+
+        result = buf.result()
+        assert isinstance(result, RegisterResponse)
+        assert list(result.registers) == [1, 1]
 
 
 class TestWriteSafety:

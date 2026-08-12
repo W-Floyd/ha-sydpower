@@ -26,9 +26,12 @@ Sources: modbus_core_pretty.js (Gn/jn/qn functions), app-service-beautified.js
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 
 from .exceptions import CRCError, ProtocolError
+
+_log = logging.getLogger(__name__)
 
 
 # ── CRC16 / Modbus ────────────────────────────────────────────────────────────
@@ -195,11 +198,21 @@ class ResponseBuffer:
         # given register count, so without this check the wrong bank's data is
         # accepted silently and every register is misinterpreted.
         if fc != self.expected_func_code:
-            raise ProtocolError(
-                f"Response function code 0x{fc:02X} does not match the "
-                f"requested 0x{self.expected_func_code:02X} — desynchronised "
-                f"response stream (raw prefix: {bytes(self._raw[:8]).hex()})"
+            # Drop it and keep waiting rather than failing the whole exchange.
+            # A stale frame legitimately arrives here: a write echo queued by the
+            # device can be delivered on the *next* connection, landing in front
+            # of the reply we are waiting for. Discarding is safe because the
+            # mismatched frame is never interpreted as register data, and the
+            # caller's timeout still bounds how long we wait for the real reply.
+            _log.debug(
+                "Discarding unsolicited FC 0x%02X frame while awaiting 0x%02X "
+                "(prefix: %s)",
+                fc,
+                self.expected_func_code,
+                bytes(self._raw[:8]).hex(),
             )
+            self._raw.clear()
+            return False
 
         if fc in (0x03, 0x04):
             # Header: [addr, fc, start_hi, start_lo, count_hi, count_lo]

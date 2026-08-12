@@ -147,16 +147,26 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
             self._device_name,
         )
         try:
+            # Write and read back within a single connection. Reconnecting for
+            # the read-back doubles the connect/disconnect churn, which this
+            # hardware tolerates badly — two threshold writes in quick
+            # succession were enough to make a device reset itself. Staying on
+            # one connection also keeps the write echo ordered ahead of the
+            # read reply, instead of arriving as a stale frame on the next one.
             async with device:
                 await device.write_register(register, value)
+                await asyncio.sleep(WRITE_SETTLE_DELAY)
+                holding = await device.read_holding_registers()
+                input_regs = await device.read_input_registers()
         except (SydpowerError, BleakError, TimeoutError) as err:
             raise HomeAssistantError(
                 f"Failed to write register {register} on {self._device_name}: {err}"
             ) from err
 
-        # The device needs a moment to apply the change before it reads back.
-        await asyncio.sleep(WRITE_SETTLE_DELAY)
-        await self.async_request_refresh()
+        # Publish directly; a refresh here would open yet another connection.
+        self.async_set_updated_data(
+            SydpowerData(holding=holding, input=input_regs)
+        )
 
     def _connectable_device_or_error(self) -> BLEDevice:
         """As ``_connectable_device`` but raising for a user-initiated action."""

@@ -107,7 +107,7 @@ def _build_descriptions(
                         register_indices=[child_idx, *child_indices],
                         state_class=SensorStateClass.MEASUREMENT,
                         device_class=SensorDeviceClass.POWER,
-                        unit_of_measurement=UnitOfPower.WATT,
+                        native_unit_of_measurement=UnitOfPower.WATT,
                     )
                 )
         else:
@@ -120,7 +120,7 @@ def _build_descriptions(
                     register_indices=[parent_idx],
                     state_class=SensorStateClass.MEASUREMENT,
                     device_class=SensorDeviceClass.POWER,
-                    unit_of_measurement=UnitOfPower.WATT,
+                    native_unit_of_measurement=UnitOfPower.WATT,
                 )
             )
 
@@ -139,7 +139,7 @@ def _build_descriptions(
                         register_indices=[child_idx],
                         state_class=SensorStateClass.MEASUREMENT,
                         device_class=SensorDeviceClass.POWER,
-                        unit_of_measurement=UnitOfPower.WATT,
+                        native_unit_of_measurement=UnitOfPower.WATT,
                     )
                 )
 

@@ -99,7 +99,13 @@ def _parse_advertisement(
             raw_payload = value
             break
     if raw_payload is None and adv.manufacturer_data:
-        raw_payload = next(iter(adv.manufacturer_data.values()))
+        # These devices are not really using manufacturer data: they put the
+        # payload straight into the AD structure, so its first two bytes get
+        # parsed as a company ID and stripped into bleak's dict key. Both bytes
+        # are payload — the 0x99 legacy prefix and the MAC's first octet — so
+        # reassemble them (little-endian, as the company ID was decoded).
+        company_id, value = next(iter(adv.manufacturer_data.items()))
+        raw_payload = company_id.to_bytes(2, "little") + value
 
     advertis = ""
     init_status = 0
