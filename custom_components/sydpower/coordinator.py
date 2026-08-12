@@ -88,6 +88,10 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
         self._modbus_address = modbus_address
         self._modbus_count = modbus_count
         self._protocol_version = protocol_version
+        # These devices accept a single BLE client at a time, so all access is
+        # serialised. Without this a scheduled poll can fire while a write is in
+        # flight and Home Assistant ends up contending with itself.
+        self._io_lock = asyncio.Lock()
 
     # ── Polling ───────────────────────────────────────────────────────────────
 
@@ -118,7 +122,7 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
         device = self._device(ble_device)
 
         try:
-            async with device:
+            async with self._io_lock, device:
                 holding = await device.read_holding_registers()
                 input_regs = await device.read_input_registers()
         except (SydpowerError, BleakError, TimeoutError) as err:
@@ -153,7 +157,7 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
             # succession were enough to make a device reset itself. Staying on
             # one connection also keeps the write echo ordered ahead of the
             # read reply, instead of arriving as a stale frame on the next one.
-            async with device:
+            async with self._io_lock, device:
                 await device.write_register(register, value)
                 await asyncio.sleep(WRITE_SETTLE_DELAY)
                 holding = await device.read_holding_registers()
