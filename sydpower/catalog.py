@@ -197,7 +197,14 @@ def fault_value(registers: list[int], input_registers: list[int]) -> int | None:
 
 
 def active_faults(input_registers: list[int]) -> list[str]:
-    """Return the messages for every named fault bit currently set."""
+    """
+    Return the messages for every named fault bit currently set.
+
+    Messages the backend leaves untranslated are replaced with English wording;
+    see ``fault_messages.py``.
+    """
+    from .fault_messages import translate_fault
+
     messages: list[str] = []
     for group in get_faults():
         value = fault_value(group.get("registers") or [], input_registers)
@@ -207,7 +214,7 @@ def active_faults(input_registers: list[int]) -> list[str]:
             group.get("bits", {}).items(), key=lambda kv: int(kv[0])
         ):
             if message and value >> int(bit) & 1:
-                messages.append(message)
+                messages.append(translate_fault(message))
     return messages
 
 

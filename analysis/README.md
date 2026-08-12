@@ -289,5 +289,14 @@ Fetched without a `product_id`, which returns every group along with its name;
 the per-product response omits `name`. Groups are therefore not filtered per
 product, so another product family could in principle use different registers.
 
-25 of the 42 messages are still Chinese despite `--locale en`; the backend's
-translations are incomplete, and there is nothing to be done about that here.
+25 of the 42 messages come back Chinese despite `--locale en` — the backend's
+translations are incomplete. `sydpower/fault_messages.py` supplies English wording
+for those, keyed by the backend's exact source string, and it is applied when
+reading rather than when building the catalog: a refresh cannot silently lose the
+overrides, and a test fails if any key stops matching a catalog message.
+
+Wording follows the English siblings in each group, several of which pin it
+exactly — "Overload fault level 1" and "level 3" fix the phrasing of "level 2",
+and "Low temperature when AFE charging" fixes its high-temperature counterpart.
+One override is not a translation at all: the backend's own English has "whtn"
+where bit 9 has "when".

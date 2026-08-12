@@ -695,3 +695,60 @@ async def test_scan_function_signature():
     # scan should accept a timeout parameter with default
     params = list(sig.parameters.keys())
     assert "timeout" in params
+
+
+class TestFaultMessageOverrides:
+    """
+    Test the English wording applied to untranslated fault messages.
+
+    The overrides are keyed by the backend's exact source string, so a catalog
+    refresh that reworded something would silently stop matching. These tests
+    fail in that case rather than quietly reverting to Chinese.
+    """
+
+    def test_every_override_still_matches_a_catalog_message(self):
+        from sydpower.catalog import get_faults
+        from sydpower.fault_messages import FAULT_MESSAGE_OVERRIDES
+
+        present = {m for g in get_faults() for m in g["bits"].values()}
+        stale = sorted(set(FAULT_MESSAGE_OVERRIDES) - present)
+        assert not stale, f"overrides no longer in the catalog: {stale}"
+
+    def test_no_catalog_message_is_left_untranslated(self):
+        from sydpower.catalog import get_faults
+        from sydpower.fault_messages import translate_fault
+
+        untranslated = [
+            translate_fault(m)
+            for g in get_faults()
+            for m in g["bits"].values()
+            if any("一" <= c <= "鿿" for c in translate_fault(m))
+        ]
+        assert not untranslated, f"still Chinese after override: {untranslated}"
+
+    def test_unknown_message_passes_through(self):
+        from sydpower.fault_messages import translate_fault
+
+        assert translate_fault("Temperature fault") == "Temperature fault"
+
+    def test_active_faults_reports_english(self):
+        from sydpower.catalog import active_faults, get_faults
+
+        # Pick a group and bit whose source message is Chinese.
+        group, bit = next(
+            (g, b)
+            for g in get_faults()
+            for b in g["bits"]
+            if any("一" <= c <= "鿿" for c in g["bits"][b])
+        )
+        registers = [0] * 80
+        value = 1 << int(bit)
+        if len(group["registers"]) == 1:
+            registers[group["registers"][0]] = value
+        else:
+            registers[group["registers"][0]] = value >> 16
+            registers[group["registers"][1]] = value & 0xFFFF
+
+        reported = active_faults(registers)
+        assert reported, "no fault reported for a set bit"
+        assert not any("一" <= c <= "鿿" for c in reported[0]), reported
