@@ -230,8 +230,19 @@ release: check check-matchers test
         exit 1
     fi
 
+    # The release commit is made only if there is something to commit. Describing
+    # a release properly often means editing the changelog over several commits,
+    # which used to leave this recipe unusable: an empty `git commit` fails under
+    # `set -e`, so a fully committed tree — the tidiest state to release from —
+    # was the one state that could not be released. The version checks above have
+    # already passed against the working tree, which is what the tag will point at.
     git add {{pyproject}} {{setup}} {{manifest}} {{changes}}
-    git commit -m "chore(release): $tag"
+    if git diff --cached --quiet; then
+        echo "release files already committed; tagging HEAD as it stands"
+    else
+        git commit -m "chore(release): $tag"
+    fi
+
     git tag -a "$tag" -m "sydpower $version"
     git push origin HEAD
     git push origin "$tag"
