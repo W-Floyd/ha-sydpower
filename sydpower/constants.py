@@ -102,4 +102,8 @@ WRITABLE_HOLDING_REGISTERS: dict[int, tuple[int, int]] = {
     # Remote shutdown. Only 1 is meaningful and the app writes nothing else, so
     # the range is exactly that one value — this powers the unit down.
     64: (1, 1),
+    # Maximum charging current. A static backstop only: the real ceiling is
+    # declared per device in holding 17, which the integration reads and enforces,
+    # and no unit in this family is plausibly above this.
+    20: (1, 100),
 }

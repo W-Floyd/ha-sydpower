@@ -36,9 +36,15 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, INPUT_SCHEDULED_CHARGE_COUNTDOWN
+from sydpower.catalog import state_word
+
+from .const import DOMAIN, INPUT_SCHEDULED_CHARGE_COUNTDOWN, STATE_AC_BIT
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
+
+
+# Register 41 is the state word's high half, so its AC bit sits 16 places up.
+AC_OUTPUT_STATE_BIT = 16 + STATE_AC_BIT.bit_length() - 1
 
 
 # Firmware versions, from the holding bank. The app posts exactly these four
@@ -63,6 +69,9 @@ class SydpowerSensorDescription(SensorEntityDescription):
     register: int
     # Raw register value is divided by this to reach the reported unit.
     divisor: float = 1.0
+    # Bit of the state word that must be set for the reading to mean anything. The
+    # inverter's output voltage, for instance, floats when the output is off.
+    requires_state_bit: int | None = None
 
 
 SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
@@ -93,13 +102,26 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SydpowerSensorDescription(
-        key="ac_voltage",
-        name="AC voltage",
+        key="ac_input_voltage",
+        name="AC input voltage",
+        register=21,
+        divisor=10,
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
+        key="ac_output_voltage",
+        name="AC output voltage",
         register=18,
         divisor=10,
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        # Unenergised, this register floats: with the output off it was seen
+        # reporting 139.8, 69.2, 118.4, 90.9 and 69.4 V in consecutive polls, while
+        # the mains reading held steady. Reporting nothing beats recording noise.
+        requires_state_bit=AC_OUTPUT_STATE_BIT,
     ),
     SydpowerSensorDescription(
         key="input_power",
@@ -205,8 +227,10 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
 # Deliberately not exposed:
 #   input 20 — byte-identical to register 39 in every sample; publishing both
 #     would be two entities for one measurement.
-#   input 21 — tracks register 18 about 0.3 V lower; whether the pair is AC
-#     input versus output is unresolved, so only one is published.
+#   Registers 18 and 21 are now distinguished. Both read about 118 V while the AC
+#   output is on, but with it off register 21 held steady while 18 floated across
+#   139.8, 69.2, 118.4, 90.9 and 69.4 V — so 21 is the mains input and 18 the
+#   inverter output.
 #   input 42 — a bitfield, not a wattage, despite its plausible magnitude.
 #   input 19 — constant 600, most likely AC input frequency at a different
 #     scale from register 22; unconfirmed.
@@ -250,8 +274,19 @@ class SydpowerSensor(SydpowerEntity, SensorEntity):
             and self._input(self.entity_description.register) is not None
         )
 
+    def _meaningful(self) -> bool:
+        """False when this reading's precondition is not met."""
+        bit = self.entity_description.requires_state_bit
+        if bit is None:
+            return True
+        data = self.coordinator.data
+        word = None if data is None else state_word(data.input)
+        return word is not None and bool(word >> bit & 1)
+
     @property
     def native_value(self) -> float | int | None:
+        if not self._meaningful():
+            return None
         value = self._input(self.entity_description.register)
         if value is None:
             return None

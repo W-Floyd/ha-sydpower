@@ -163,12 +163,24 @@ and "Flash Mode", named by the catalog — rather than a switch plus a select.
 | Register | Function | Scale | Notes |
 | --- | --- | --- | --- |
 | 22 | AC frequency | ÷100 → Hz | 5998–6001 = 59.98–60.01 Hz |
-| 18 | AC voltage | ÷10 → V | ~120.1–120.3 V, consistently ~0.3 V above register 21 |
-| 21 | AC voltage | ÷10 → V | ~119.7–120.0 V |
+| 21 | **AC input** (mains) voltage | ÷10 → V | Steady regardless of output state |
+| 18 | **AC output** (inverter) voltage | ÷10 → V | Floats when the output is off |
 
-Whether 18/21 are input vs output, or two measurement points on the same rail,
-is unresolved — mains was connected and AC output was enabled for most of the
-session, so the two cases were never separated.
+Resolved by turning the AC output off with mains still connected. Both read about
+118 V while the output is on, but with it off the two behave completely differently:
+
+```
+AC output on     [18] 118.0  118.2  118.3  118.2      [21] 117.7 .. 118.1
+AC output off    [18] 139.8   69.2  118.4   90.9      [21] 117.8 .. 118.1
+```
+
+Register 21 holds steady — it is the grid. Register 18 floats across a 70 V range,
+which is an unenergised output being sampled, so it is the inverter's.
+
+The integration therefore reports the output voltage only while the output is on;
+otherwise it publishes nothing rather than recording that noise. Until this test
+the pair was indistinguishable, because mains had been connected and the output
+enabled for every earlier sample.
 
 ### Power and duration: registers 3, 4, 6, 20, 39, 58
 

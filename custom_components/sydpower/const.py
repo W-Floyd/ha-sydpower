@@ -45,6 +45,14 @@ INPUT_SCHEDULED_CHARGE_COUNTDOWN = 57
 # Powers the unit down. The app writes 1 behind a confirmation modal.
 REG_REMOTE_SHUTDOWN = 64
 
+# Maximum charging current. The app offers 1..holding[17] and writes the chosen
+# value to holding[20], so the ceiling is declared by the device rather than fixed.
+# Its label is unqualified — 最大充电电流设置, "maximum charging current setting" —
+# and the page is titled AC charging settings, though 20 A at 110 V would exceed the
+# charge-power ceiling of 1100 W, so it may govern the DC/PV input instead.
+REG_MAX_CHARGE_CURRENT = 20
+REG_MAX_CHARGE_CURRENT_CEILING = 17
+
 # ── Output state bits in input register 41 ────────────────────────────────────
 # Confirmed empirically by toggling each output in isolation.
 STATE_REGISTER = 41
