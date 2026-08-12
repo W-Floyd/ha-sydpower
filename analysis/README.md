@@ -219,6 +219,17 @@ The resulting token is cached in `build/api/user_token.json` with mode 600 and
 reused on later runs; `--refresh` obtains a fresh one. `build/` is gitignored, so
 neither the token nor the unpacked app is committed.
 
-Login posts `{username, password}` to `client/user/pub/login`; the backend
-resolves whether the identifier is a username, an email address or a mobile
-number, so one field covers all three.
+Note the missing `client/` prefix on user-centre actions: `client/user/pub/login`
+returns `404 not found`, while `user/pub/login` works. The app's own actions do
+carry the prefix.
+
+There are two login paths, and which applies depends on the account:
+
+- **Username** — `user/pub/login` with `{username, password}`. `username` is
+  mandatory; passing an email in that field returns "user does not exist", and
+  supplying `email` instead returns "username cannot be empty".
+- **Email** — password login is not available. `user/pub/loginByEmail` requires an
+  emailed verification code (`{email, code}`); any password sent with it is
+  ignored and it answers "verification code wrong or expired". The script
+  therefore calls `user/pub/sendEmailCode` and prompts for the code, or reads
+  `BRIGHTEMS_CODE` if you would rather not be prompted.

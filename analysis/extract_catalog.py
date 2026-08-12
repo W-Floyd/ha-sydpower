@@ -253,7 +253,47 @@ def post(
 
 # vk-unicloud resolves the identifier itself, so one field covers a username, a
 # mobile number or an email address.
-LOGIN_ACTION = "client/user/pub/login"
+#
+# Note the missing `client/` prefix: user-centre actions are unprefixed while the
+# app's own actions carry it. Prefixing this one returns
+# `404 not found【client/user/pub/login】`.
+LOGIN_ACTION = "user/pub/login"
+LOGIN_BY_EMAIL_ACTION = "user/pub/loginByEmail"
+SEND_EMAIL_CODE_ACTION = "user/pub/sendEmailCode"
+
+
+def load_dotenv(path: Path) -> list[str]:
+    """
+    Load ``KEY=value`` pairs from *path* into the environment.
+
+    Existing environment variables win, so an explicit export still overrides the
+    file. Sourcing a dotenv in a shell only sets shell variables unless each line
+    is exported, which means a child process sees nothing — reading the file here
+    avoids that trap entirely.
+
+    Returns the names that were set, never the values.
+    """
+    if not path.exists():
+        return []
+
+    loaded: list[str] = []
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :]
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip()
+        if not key or not _:
+            continue
+        # Strip one layer of matching quotes, as shells would.
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        if key not in os.environ:
+            os.environ[key] = value
+            loaded.append(key)
+    return loaded
 
 
 def login(config: dict[str, str], locale: str, anon_token: str) -> str:
@@ -274,26 +314,11 @@ def login(config: dict[str, str], locale: str, anon_token: str) -> str:
     if not (username and password):
         sys.exit("no credentials supplied")
 
-    body = post(
-        config,
-        {
-            "method": "serverless.function.runtime.invoke",
-            "params": json.dumps(
-                {
-                    "functionTarget": ROUTER_FUNCTION,
-                    "functionArgs": {
-                        "$url": LOGIN_ACTION,
-                        "data": {"username": username, "password": password},
-                        "encrypt": False,
-                    },
-                },
-                separators=(",", ":"),
-            ),
-        },
-        locale,
-        anon_token,
-    )
-    result = body.get("data", body)
+    if "@" in username:
+        result = _login_by_email(config, locale, anon_token, username)
+    else:
+        result = _login_by_password(config, locale, anon_token, username, password)
+
     if result.get("code") not in (0, None):
         # Deliberately does not echo the response wholesale: it can contain the
         # submitted account.
@@ -304,6 +329,71 @@ def login(config: dict[str, str], locale: str, anon_token: str) -> str:
         sys.exit(f"login succeeded but returned no token; keys: {sorted(result)}")
     log("login", "user token acquired")
     return token
+
+
+def _invoke(
+    config: dict[str, str], locale: str, token: str, action: str, data: dict
+) -> dict[str, Any]:
+    """Invoke one router action with a payload, returning the unwrapped result."""
+    body = post(
+        config,
+        {
+            "method": "serverless.function.runtime.invoke",
+            "params": json.dumps(
+                {
+                    "functionTarget": ROUTER_FUNCTION,
+                    "functionArgs": {"$url": action, "data": data, "encrypt": False},
+                },
+                separators=(",", ":"),
+            ),
+        },
+        locale,
+        token,
+    )
+    return body.get("data", body)
+
+
+def _login_by_password(
+    config: dict[str, str], locale: str, anon_token: str, username: str, password: str
+) -> dict[str, Any]:
+    """Username and password login. `username` is mandatory for this action."""
+    return _invoke(
+        config, locale, anon_token, LOGIN_ACTION,
+        {"username": username, "password": password},
+    )
+
+
+def _login_by_email(
+    config: dict[str, str], locale: str, anon_token: str, email: str
+) -> dict[str, Any]:
+    """
+    Email login, which needs an emailed verification code rather than a password.
+
+    Password login requires a `username`; an email address is rejected as
+    "user does not exist", and loginByEmail answers "verification code wrong or
+    expired" whatever password is supplied. So this requests a code and asks for
+    it. Set BRIGHTEMS_CODE to skip the prompt.
+    """
+    code = os.environ.get("BRIGHTEMS_CODE")
+    if not code:
+        log("login", "requesting an email verification code")
+        sent = _invoke(
+            config, locale, anon_token, SEND_EMAIL_CODE_ACTION,
+            {"email": email, "type": "login"},
+        )
+        if sent.get("code") not in (0, None):
+            sys.exit(
+                f"could not send an email code: {sent.get('code')} {sent.get('msg', '')}"
+            )
+        log("login", "code sent; check the inbox for the account in .env")
+        code = input("Emailed verification code: ").strip()
+    if not code:
+        sys.exit("no verification code supplied")
+
+    return _invoke(
+        config, locale, anon_token, LOGIN_BY_EMAIL_ACTION,
+        {"email": email, "code": code},
+    )
 
 
 def load_user_token(
@@ -629,6 +719,12 @@ def main() -> int:
     parser.add_argument("--locale", default="en", help="locale requested from the backend")
     parser.add_argument("--refresh", action="store_true", help="ignore cached API responses")
     parser.add_argument(
+        "--env",
+        type=Path,
+        default=here / ".env",
+        help="dotenv file read for credentials (default: analysis/.env)",
+    )
+    parser.add_argument(
         "--login",
         action="store_true",
         help=(
@@ -663,6 +759,11 @@ def main() -> int:
     )
     parser.add_argument("--clean", action="store_true", help="remove the workdir first")
     args = parser.parse_args()
+
+    # Read credentials from a dotenv beside the script, if present.
+    loaded = load_dotenv(args.env)
+    if loaded:
+        log("env", f"loaded {', '.join(sorted(loaded))} from {args.env.name}")
 
     if args.clean and args.workdir.exists():
         shutil.rmtree(args.workdir)
