@@ -226,7 +226,7 @@ device's own display alongside a register dump: the screen showed 628 W input,
 | Register | Function | Unit |
 | --- | --- | --- |
 | 3 | Power into the battery (charging) | W |
-| 4 | DC / solar input power | W — **unverified**, always 0 so far |
+| 4 | DC / solar input power | W — confirmed, see below |
 | 6 | Total input power | W |
 | 20 | Byte-identical to 39 in every sample | W |
 | 39 | Output power | W |
@@ -241,10 +241,32 @@ input[6] = input[39] + input[3]        613 = 365 + 248
                                        512 = 512 +   0   (idle, not charging)
 ```
 
-Register 4 is the open question. Nothing has ever been connected to the DC/solar
-input, so it is unproven whether solar appears as a fourth term in that identity
-or is folded into register 3. Its number comes from the earlier ESP-FBot
-integration, whose other power indices (3, 6, 20, 39) all proved correct here.
+Register 4 carries DC/solar input, confirmed once solar was actually producing
+with the mains disconnected. It had read 0 in every earlier sample simply because
+nothing was connected:
+
+```
+        SOC    [4]DC  [6]in  [39]out  [21]ac V   runtime
+mains  98.9%       0    504      508     119.8   22786 min
+OFF    98.8%     162    162      506       0.3     289 min
+OFF    98.6%     151    151      509       0.3     277 min
+```
+
+So register 6 is genuinely *total* input, not the AC figure: with mains present it
+reported the ~500 W grid draw while 4 sat at 0, and with mains gone it reports the
+solar figure exactly. Note also that the runtime estimate only means anything in
+the second case — while the grid carried the load the device divided by a
+near-zero discharge rate and produced 22,786 minutes.
+
+What is **not** yet proven is that the two sources add. No sample has had mains and
+solar present at once, so `6 = AC + DC` is inferred from two mutually exclusive
+cases; it remains possible that 6 reports whichever source is active. A frame with
+both would settle it, as would one charging from solar, which would also show
+whether solar enters the `input[6] = input[39] + input[3]` identity as a fourth
+term or via register 3.
+
+Register 4's number comes from the earlier ESP-FBot integration, whose other power
+indices (3, 6, 20, 39) all proved correct here — and now 4 has too.
 
 Note that the absolute figures are reportedly higher than an external meter
 shows. That is the device's own inaccuracy — the registers match its display
@@ -348,8 +370,11 @@ expansion pack ever counts.
 
 ## Still unmapped
 
-- Whether DC/solar input appears in register 4, and how it enters the input
-  power identity. Needs a panel or DC source connected.
+- Whether AC and DC input **add** in register 6. Register 4 is confirmed as DC/solar
+  input, and 6 equals it exactly with the mains absent, but no sample has had both
+  sources at once — so 6 may sum them or may report whichever is active. A frame
+  charging from solar would also show how solar enters the
+  `input[6] = input[39] + input[3]` identity.
 - `input[19]`, constant 600 across every mains and inverter state — narrowed to a
   nominal 60.0 Hz rating rather than a measurement, but not confirmed. Not read
   literally anywhere in the app.
