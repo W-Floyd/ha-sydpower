@@ -252,44 +252,54 @@ class SydpowerOptionsFlow(OptionsFlow):
         Record what external meters say, against the device's raw registers.
 
         Only the true figures are asked for. The device's own readings are taken
-        from the current poll rather than typed in, because the sensors are
-        corrected once a calibration exists — a sample transcribed from them would
-        measure the *residual* error and pile it on top of the correction already
-        applied, so each sample would be contaminated by the last. Reading the raw
-        registers keeps every sample independent of the fit it feeds.
+        from the registers rather than typed in, because the sensors are corrected
+        once a calibration exists — a sample transcribed from them would measure the
+        *residual* error and pile it on top of the correction already applied, so
+        each sample would be contaminated by the last. Reading the registers keeps
+        every sample independent of the fit it feeds.
+
+        The registers are re-read when the form is submitted, not reused from when
+        it was drawn. A displayed reading can be a whole poll interval old, and the
+        meter figures being entered were read moments ago, so a fresh poll — about a
+        second — pairs them far more closely in time.
         """
         errors: dict[str, str] = {}
-        raw = self._raw_readings()
-
-        if raw is None:
-            # Nothing polled yet, so there are no device readings to pair with.
-            return self.async_abort(reason="no_data")
 
         if user_input is not None:
             out_true = user_input.get(CONF_SAMPLE_OUT_TRUE)
             in_true = user_input.get(CONF_SAMPLE_IN_TRUE)
             if out_true is None and in_true is None:
                 errors["base"] = "sample_needs_a_pair"
-            elif not raw[CONF_SAMPLE_CHARGE_REPORTED]:
-                # The error only appears while charging, so a sample taken in
-                # pass-through would anchor the fit at zero and flatten it.
-                errors["base"] = "sample_needs_charging"
             else:
-                sample = dict(raw)
-                if out_true is not None:
-                    sample[CONF_SAMPLE_OUT_TRUE] = out_true
-                if in_true is not None:
-                    sample[CONF_SAMPLE_IN_TRUE] = in_true
-                return self._save([*self._samples, sample])
+                raw = await self._async_fresh_readings()
+                if raw is None:
+                    return self.async_abort(reason="no_data")
+                if not raw[CONF_SAMPLE_CHARGE_REPORTED]:
+                    # The error only appears while charging, so a sample taken in
+                    # pass-through would anchor the fit at zero and flatten it.
+                    # Checked against the fresh reading, so charging stopping while
+                    # the form was open is caught rather than stored.
+                    errors["base"] = "sample_needs_charging"
+                else:
+                    sample = dict(raw)
+                    if out_true is not None:
+                        sample[CONF_SAMPLE_OUT_TRUE] = out_true
+                    if in_true is not None:
+                        sample[CONF_SAMPLE_IN_TRUE] = in_true
+                    return self._save([*self._samples, sample])
+
+        shown = self._raw_readings()
+        if shown is None:
+            return self.async_abort(reason="no_data")
 
         return self.async_show_form(
             step_id="add_sample",
             errors=errors,
             description_placeholders={
                 "count": str(len(self._samples)),
-                "charge": f"{raw[CONF_SAMPLE_CHARGE_REPORTED]:.0f}",
-                "out": f"{raw[CONF_SAMPLE_OUT_REPORTED]:.0f}",
-                "in": f"{raw[CONF_SAMPLE_IN_REPORTED]:.0f}",
+                "charge": f"{shown[CONF_SAMPLE_CHARGE_REPORTED]:.0f}",
+                "out": f"{shown[CONF_SAMPLE_OUT_REPORTED]:.0f}",
+                "in": f"{shown[CONF_SAMPLE_IN_REPORTED]:.0f}",
             },
             data_schema=vol.Schema(
                 {
@@ -298,6 +308,35 @@ class SydpowerOptionsFlow(OptionsFlow):
                 }
             ),
         )
+
+    async def _async_fresh_readings(self) -> dict[str, float] | None:
+        """
+        Poll the device now, then return its raw power registers.
+
+        A failed poll falls back to the last successful one rather than aborting:
+        the meter figures have already been entered, and a stale pairing is worth
+        more than discarding the observation. The coordinator serialises device
+        access, so this cannot collide with a scheduled poll.
+        """
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        if coordinator is None:
+            return None
+
+        before = self._raw_readings()
+        await coordinator.async_refresh()
+        after = self._raw_readings()
+
+        if after is None:
+            return before
+        if before is not None and before != after:
+            # Worth seeing: a load that moves between drawing the form and
+            # submitting it is exactly what produces a large residual later.
+            _LOGGER.debug(
+                "Readings moved while the calibration form was open: %s -> %s",
+                before,
+                after,
+            )
+        return after
 
     async def async_step_review_samples(
         self, user_input: dict[str, Any] | None = None

@@ -31,7 +31,7 @@
       },
       "add_sample": {
         "title": "Add a calibration sample",
-        "description": "Enter what your **external meters** say right now. The device's own readings are taken from the current poll — you do not type them, because once a calibration is active the sensors are corrected and a sample copied from them would measure the leftover error and stack it on the correction already applied.\n\nThis poll reports **{charge} W** charging, **{out} W** out, **{in} W** in (raw registers, uncorrected). {count} sample(s) recorded so far.\n\nThe device must be charging — the error does not appear otherwise. Give at least one figure; both also derives the true charge power, which checks the device's own charge reading.\n\nFor a second sample that resolves whether the error scales, change the AC charging power setting first so the charge rate differs.",
+        "description": "Enter what your **external meters** say right now, then submit. The device is re-polled at that moment and its raw registers recorded, so you do not type them — once a calibration is active the sensors are corrected, and a sample copied from them would measure the leftover error and stack it on the correction already applied.\n\nThe last poll reported **{charge} W** charging, **{out} W** out, **{in} W** in (raw, uncorrected). These may be up to one poll interval old; submitting takes a fresh reading, which is why nothing here needs to be current. {count} sample(s) recorded so far.\n\nThe device must be charging — the error does not appear otherwise, and this is checked against the fresh reading. Give at least one figure; both also derives the true charge power, which checks the device's own charge reading.\n\nFor a second sample that resolves whether the error scales with charge rate, change the AC charging power setting first so the rate differs.",
         "data": {
           "out_true": "Output power, true — what the load reports (W)",
           "in_true": "Input power, true — wall meter (W)"
@@ -47,7 +47,7 @@
     },
     "error": {
       "sample_needs_a_pair": "A sample needs a true and reported value for the output, the input, or both — otherwise there is no error to measure.",
-      "sample_needs_charging": "The device is not charging, and the error only appears while it is. Raise the charge ceiling above the current battery level and try again."
+      "sample_needs_charging": "The device was not charging when the fresh reading was taken, and the error only appears while it is. Raise the charge ceiling above the current battery level and try again."
     },
     "abort": {
       "no_data": "The device has not been polled yet, so there are no readings to pair with. Try again once it is connected.",

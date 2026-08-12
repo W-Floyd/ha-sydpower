@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-08-12
+
+### Fixed
+- **A calibration sample now re-polls the device on submit.** The readings shown on
+  the form come from the last scheduled poll and can be a whole interval old — 30
+  seconds by default — while the meter figures being typed in were read moments ago.
+  Pairing those was the largest remaining source of error in a sample. Submitting
+  now takes a fresh reading, about a second, and records that instead, so the form
+  no longer needs to be opened promptly after reading the meters.
+
+  The charging check moved to the fresh reading too, so charging stopping while the
+  form was open is caught rather than stored. A failed poll falls back to the last
+  successful reading rather than discarding what was typed, and a reading that moves
+  between drawing the form and submitting it is logged, that being exactly what
+  shows up as a large residual later.
+
 ## [0.5.1] - 2026-08-12
 
 Completes the calibration flow 0.5.0 introduced, which had a design flaw serious
