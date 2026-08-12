@@ -276,9 +276,12 @@ It does not repeat. Four things establish that:
 So "every morning at six" is not something the device does. Re-arming it daily is
 the caller's job — an automation writing the delay each day would do it.
 
-Cancelling a schedule and remote shutdown are exposed as buttons. Setting one is
-not: a delay in minutes derived from a wall-clock time suits a service or datetime
-entity rather than any of the platforms here. Note that the same page also carries
+Cancelling a schedule and remote shutdown are exposed as buttons, and the schedule
+itself as a datetime entity. That entity holds no state of its own: it projects the
+device's countdown forward to a wall-clock time, so it clears itself once the
+countdown expires, and a schedule set from the app shows up in it too. Setting one
+computes the delay and range-checks it, refusing a time in the past or more than a
+day ahead. Note that the same page also carries
 the silent-charging toggle and the charging-power settings, which is corroborating
 evidence for holding 57 being silent charging.
 
