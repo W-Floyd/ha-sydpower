@@ -245,13 +245,24 @@ deploy-lib: build
     wheel=$(ls "{{justfile_directory()}}/sydpower/dist/"*.whl | head -1)
     name=$(basename "$wheel")
     echo "installing $name into the core container on {{haos_host}}"
-    scp "$wheel" "{{haos_host}}:/tmp/$name"
+
+    # Staged through /config rather than /tmp: the SSH shell runs in its own
+    # container, so its /tmp is not a path the docker daemon can resolve and
+    # `docker cp` appears to succeed while copying nothing. /config is the same
+    # volume the core container mounts, so both sides see this file.
+    remote="{{haos_config}}/.sydpower-dev-wheel"
+    ssh "{{haos_host}}" "mkdir -p '$remote'"
+    scp "$wheel" "{{haos_host}}:$remote/$name"
+
     # Needs the Advanced SSH add-on with protection mode off, so docker is
-    # reachable. --force-reinstall because the version may not have changed.
-    ssh "{{haos_host}}" "docker cp /tmp/$name homeassistant:/tmp/$name && \
-        docker exec homeassistant pip install --force-reinstall --no-deps /tmp/$name"
+    # reachable. --force-reinstall because the version may not have changed;
+    # --no-deps because the dependencies are already satisfied.
+    ssh "{{haos_host}}" "docker exec homeassistant pip install \
+        --force-reinstall --no-deps '/config/.sydpower-dev-wheel/$name'"
+    ssh "{{haos_host}}" "rm -rf '$remote'"
+
     ssh "{{haos_host}}" 'ha core restart'
-    echo "restarted"
+    echo "restarted; confirm with: just deployed"
 
 # Deploy both the library and the integration.
 deploy-all: deploy-lib deploy
