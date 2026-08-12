@@ -19,7 +19,6 @@ POLL_INTERVAL = 30
 # and match upstream's v1 constants; 27 is additionally write-verified.
 # See docs/register-map-v0.md. Every write goes through the library's
 # WRITABLE_HOLDING_REGISTERS allowlist, which is the authority on valid ranges.
-REG_AC_CHARGE_LIMIT = 13
 REG_USB_CONTROL = 24
 REG_DC_CONTROL = 25
 REG_AC_CONTROL = 26
@@ -38,11 +37,11 @@ STATE_AC_BIT = 1 << 11
 STATE_LIGHT_BIT = 1 << 12
 
 # ── Select options ────────────────────────────────────────────────────────────
-# Light modes map directly to register 27's value (0-3). Modes 2 and 3 are
-# untested on v0 hardware.
+# Light modes map directly to register 27's value (0-3); all four are
+# write-verified on v0 hardware. Register 27 is a state register, so the catalog
+# does not describe it — unlike the settings registers, which are catalog-driven
+# (see select.py) with encodings in the library's SETTING_ENCODINGS.
 LIGHT_MODES = ["Off", "On", "SOS", "Flashing"]
-# AC charge limit is 1-based: option index + 1 is written to register 13.
-AC_CHARGE_LIMITS = ["300W", "500W", "700W", "900W", "1100W"]
 
 # Thresholds are stored in permille on the device (80% -> 800).
 THRESHOLD_SCALE = 10

@@ -27,6 +27,7 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
+    EntityCategory,
     UnitOfElectricPotential,
     UnitOfFrequency,
     UnitOfPower,
@@ -38,6 +39,19 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
+
+
+# Firmware versions, from the holding bank. The app posts exactly these four
+# registers to its backend under these names (app-service.js, the MCU_version
+# comparison), and reads a component version as the register's low byte divided
+# by ten — so 29 is v2.9. It also gates some setting options on the DC value, so
+# these are worth surfacing rather than hiding.
+FIRMWARE_REGISTERS: tuple[tuple[str, str, int], ...] = (
+    ("ac_version", "AC firmware", 47),
+    ("bms_version", "BMS firmware", 48),
+    ("pv_version", "PV firmware", 49),
+    ("dc_version", "DC firmware", 50),
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -192,9 +206,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up Sydpower sensors from a config entry."""
     coordinator: SydpowerCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
+    entities: list[SensorEntity] = [
         SydpowerSensor(coordinator, entry, desc) for desc in SENSOR_DESCRIPTIONS
-    )
+    ]
+    entities += [
+        SydpowerFirmwareSensor(coordinator, entry, key, name, register)
+        for key, name, register in FIRMWARE_REGISTERS
+    ]
+    async_add_entities(entities)
 
 
 class SydpowerSensor(SydpowerEntity, SensorEntity):
@@ -227,3 +246,41 @@ class SydpowerSensor(SydpowerEntity, SensorEntity):
         if divisor == 1:
             return value
         return round(value / divisor, 2)
+
+
+class SydpowerFirmwareSensor(SydpowerEntity, SensorEntity):
+    """A component firmware version, read from the holding bank."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: SydpowerCoordinator,
+        entry: ConfigEntry,
+        key: str,
+        name: str,
+        register: int,
+    ) -> None:
+        super().__init__(coordinator, entry, key)
+        self._attr_name = name
+        self._register = register
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._holding(self._register) is not None
+
+    @property
+    def native_value(self) -> str | None:
+        """
+        Format the version the way the app does.
+
+        It takes the register's low byte and divides by ten, so 29 reads as 2.9.
+        The high byte is reported alongside when non-zero rather than discarded,
+        since its meaning is unconfirmed.
+        """
+        raw = self._holding(self._register)
+        if raw is None:
+            return None
+        low, high = raw & 0xFF, raw >> 8
+        version = f"{low / 10:.1f}"
+        return version if high == 0 else f"{version} ({high})"

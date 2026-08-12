@@ -99,6 +99,31 @@ def get_product_model(product_key: str) -> str | None:
     return model.strip() if isinstance(model, str) and model.strip() else None
 
 
+def get_product_settings(product_key: str) -> list[dict]:
+    """
+    Return the writable setting definitions for a product, resolved from the
+    shared definition table.
+
+    Each entry carries ``holding_index``, ``data_list`` and optionally ``units``.
+    ``units`` is overloaded exactly as the app treats it: when it has as many
+    entries as ``data_list`` they are per-option labels, otherwise entry 0 is a
+    shared unit.
+
+    The register value is *not* always the option value — see
+    ``SETTING_ENCODINGS`` in ``constants.py``.
+    """
+    catalog = _load()
+    product = catalog.get("products", {}).get(product_key)
+    if product is None:
+        return []
+    definitions = catalog.get("settings", [])
+    return [
+        definitions[i]
+        for i in product.get("setting_indexes", [])
+        if 0 <= i < len(definitions)
+    ]
+
+
 def list_product_keys() -> list[str]:
     """Return all known product keys from the catalog."""
     return list(_load().get("products", {}).keys())

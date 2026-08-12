@@ -359,6 +359,28 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
         "features": {},
     }
 
+    # Settings are normalised: one deduplicated definition table, with products
+    # referencing entries by integer index. Inlining full records per product is
+    # what made the previous catalog 750 KB.
+    setting_defs: list[dict[str, Any]] = []
+    setting_index: dict[str, int] = {}
+    for entry in detail.get("setting_list_all", []):
+        definition = {
+            k: entry[k]
+            for k in ("function_name", "holding_index", "input_index", "bit", "data_list", "protocol_version")
+            if k in entry
+        }
+        # unit_list is overloaded: when it has as many entries as data_list the
+        # app renders them as per-option labels, otherwise entry 0 is a shared
+        # unit for every option. Keep the list and let consumers apply that rule.
+        units = [u.get("lang_text", "") for u in (entry.get("unit_list") or [])]
+        if units:
+            definition["units"] = units
+        setting_index[entry["_id"]] = len(setting_defs)
+        setting_defs.append(definition)
+    catalog["settings"] = setting_defs
+    log("build", f"{len(setting_defs)} setting definitions")
+
     for category in detail.get("category_list_all", []):
         catalog["categories"][category["_id"]] = {
             k: category[k] for k in CATEGORY_FIELDS if k in category
@@ -402,6 +424,15 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
         catalog["products"][key] = entry
 
         module = extra.get("function_module", {})
+        # Reference the shared definitions rather than copying them.
+        indexes = [
+            setting_index[i]
+            for i in module.get("setting_list_ids", [])
+            if i in setting_index
+        ]
+        if indexes:
+            catalog["products"][key]["setting_indexes"] = indexes
+
         resolved_states = [
             _feature(states[i]) for i in module.get("state_list_ids", []) if i in states
         ]

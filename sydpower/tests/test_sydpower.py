@@ -178,6 +178,90 @@ class TestCatalogModel:
         assert not missing, f"{len(missing)} product(s) lack a model, e.g. {missing[:3]}"
 
 
+class TestSettingEncodings:
+    """
+    Test how a setting's option maps onto its register value.
+
+    The catalog gives a register and an option list but not the encoding. The app
+    applies rules keyed by register number, and applying the wrong one writes a
+    plausible-looking but incorrect value to a persisted settings register.
+    """
+
+    def test_defaults_to_the_raw_value(self):
+        from sydpower.constants import SETTING_ENCODING_RAW, setting_encoding
+
+        assert setting_encoding(59) == SETTING_ENCODING_RAW
+        assert setting_encoding(9999) == SETTING_ENCODING_RAW
+
+    def test_charge_power_is_a_one_based_index(self):
+        from sydpower.constants import SETTING_ENCODING_INDEX1, setting_encoding
+
+        assert setting_encoding(13) == SETTING_ENCODING_INDEX1
+
+    def test_standby_timers_are_scaled_by_sixty(self):
+        from sydpower.constants import SETTING_ENCODING_X60, setting_encoding
+
+        for register in (60, 61, 62):
+            assert setting_encoding(register) == SETTING_ENCODING_X60
+
+    def test_every_encoded_register_is_writable(self):
+        """An encoding for a register the guard rejects would be unreachable."""
+        from sydpower.constants import SETTING_ENCODINGS, WRITABLE_HOLDING_REGISTERS
+
+        missing = sorted(set(SETTING_ENCODINGS) - set(WRITABLE_HOLDING_REGISTERS))
+        assert not missing, f"encoded but not writable: {missing}"
+
+
+class TestProductSettings:
+    """Test resolving a product's settings from the catalog."""
+
+    KEY = "00004380-0000-1000-8000-00805F9B34FB_POWER-8043"
+
+    def test_resolves_settings_for_a_known_product(self):
+        from sydpower.catalog import get_product_settings
+
+        settings = get_product_settings(self.KEY)
+        registers = {s["holding_index"] for s in settings}
+        assert registers == {13, 15, 59, 60, 61, 62, 68}
+
+    def test_unknown_product_has_no_settings(self):
+        from sydpower.catalog import get_product_settings
+
+        assert get_product_settings("00000000-0000-0000-0000-000000000000_NOPE") == []
+
+    def test_encoded_options_stay_inside_the_write_allowlist(self):
+        """
+        Every option this device can offer must be an allowed write.
+
+        Otherwise the integration would present controls whose values the safety
+        guard rejects — and these are persisted settings registers.
+        """
+        from sydpower.catalog import get_product_settings
+        from sydpower.constants import (
+            SETTING_ENCODING_INDEX1,
+            SETTING_ENCODING_X60,
+            WRITABLE_HOLDING_REGISTERS,
+            setting_encoding,
+        )
+
+        for setting in get_product_settings(self.KEY):
+            register = setting["holding_index"]
+            assert register in WRITABLE_HOLDING_REGISTERS, register
+            low, high = WRITABLE_HOLDING_REGISTERS[register]
+            encoding = setting_encoding(register)
+            for index, option in enumerate(setting["data_list"]):
+                if encoding == SETTING_ENCODING_INDEX1:
+                    value = index + 1
+                elif encoding == SETTING_ENCODING_X60:
+                    value = option * 60
+                else:
+                    value = option
+                assert low <= value <= high, (
+                    f"register {register} option {option} encodes to {value}, "
+                    f"outside {(low, high)}"
+                )
+
+
 class TestAdvertisementParsing:
     """
     Test recovery of the device MAC from the advertisement payload.

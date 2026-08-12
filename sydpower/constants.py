@@ -45,6 +45,36 @@ MAX_COMMAND_RETRIES: int = 3
 # verified accepted range.  Map of register number -> (min_value, max_value),
 # both inclusive.  Ranges are taken from the write paths in the upstream
 # ESP-Home component, components/fbot/fbot.cpp lines 567-679.
+# ── Setting register encodings ────────────────────────────────────────────────
+# The catalog gives a register and its option list but not how the option is
+# stored. The BrightEMS app applies these rules, keyed by register number, on the
+# portable-power-station settings page (app-service.js, the read/write pair around
+# `data_list.indexOf(...)`):
+#
+#   "raw"    the register holds the option value itself
+#   "index1" the register holds the option's position plus one
+#   "x60"    the register holds the option value multiplied by 60, so the
+#            displayed unit is 60x coarser than what is stored
+#
+# The balcony-PV page carries its own copy of these rules with different register
+# numbers, so this table is specific to the 80-register portable stations.
+SETTING_ENCODING_RAW = "raw"
+SETTING_ENCODING_INDEX1 = "index1"
+SETTING_ENCODING_X60 = "x60"
+
+SETTING_ENCODINGS: dict[int, str] = {
+    13: SETTING_ENCODING_INDEX1,  # AC charging power
+    60: SETTING_ENCODING_X60,     # AC no-load standby, listed in hours
+    61: SETTING_ENCODING_X60,     # DC no-load standby, listed in hours
+    62: SETTING_ENCODING_X60,     # screen rest time, listed in minutes
+}
+
+
+def setting_encoding(register: int) -> str:
+    """Return how *register* stores its option, defaulting to the raw value."""
+    return SETTING_ENCODINGS.get(register, SETTING_ENCODING_RAW)
+
+
 WRITABLE_HOLDING_REGISTERS: dict[int, tuple[int, int]] = {
     13: (1, 5),      # AC charge limit, enumerated 1-5
     24: (0, 1),      # USB output on/off
@@ -55,4 +85,13 @@ WRITABLE_HOLDING_REGISTERS: dict[int, tuple[int, int]] = {
     57: (0, 1),      # AC silent charging on/off
     66: (0, 500),    # Discharge lower limit, permille (0-50.0%)
     67: (100, 1000), # Charge upper limit, permille (10.0-100.0%)
+    # Settings described by the product catalog. Ranges span the app's own option
+    # lists after the encoding above is applied, so nothing outside what the app
+    # itself would write is permitted.
+    15: (0, 1),      # DC input type: 0 = PV mode, 1 = DC mode
+    59: (0, 30),     # USB no-load standby, minutes (raw)
+    60: (0, 1440),   # AC no-load standby, 0-24 h stored x60
+    61: (0, 1440),   # DC no-load standby, 0-24 h stored x60
+    62: (180, 1800), # Screen rest time, 3-30 min stored x60
+    68: (5, 480),    # Whole machine unused time, minutes (raw)
 }
