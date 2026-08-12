@@ -17,11 +17,14 @@ These report the device's own view of what is live, which is not always the same
 as the control register a switch writes: the light's control register holds a mode
 value while its state bit simply reports whether it is lit.
 
-An output whose register a control already writes is marked diagnostic, since the
-switch or light is the primary entity for it — but it is still worth having,
-because it reads the state word rather than the control register and so confirms
-independently that a write took effect. Per-port states have no control of their
-own and stay primary.
+A state that carries a control register is marked diagnostic, since a control
+writes that register and is therefore the primary entity for it. That is read from
+the catalog: only parent states carry one, so the field's presence is the signal
+and no list of registers has to be maintained alongside. Such a sensor is still
+worth having, because it reads the state word rather than the control register and
+so confirms independently that a write took effect. Children have no register,
+nothing writes them, and they are the only view of which port is live — so they
+stay primary.
 """
 
 from __future__ import annotations
@@ -50,12 +53,7 @@ from sydpower.catalog import (
 from .const import (
     CONF_PRODUCT_KEY,
     DOMAIN,
-    REG_AC_CONTROL,
-    REG_AC_SILENT_CONTROL,
-    REG_DC_CONTROL,
-    REG_KEY_SOUND,
     REG_LIGHT_CONTROL,
-    REG_USB_CONTROL,
     STATE_AC_BIT,
     STATE_DC_BIT,
     STATE_LIGHT_BIT,
@@ -68,22 +66,6 @@ _LOGGER = logging.getLogger(__name__)
 
 # Register 41 occupies the word's high half, so its bit 9 is word bit 25.
 _HIGH_HALF = 16
-
-# Registers a control already writes: the switch platform and the light. A state
-# that mirrors one of these is diagnostic, because the control is the primary
-# entity for it. Per-port states have no control of their own and stay primary.
-# Derived from the constants rather than listed, so adding or removing a control
-# moves its state sensor with it.
-WRITTEN_CONTROL_REGISTERS = frozenset(
-    {
-        REG_USB_CONTROL,
-        REG_DC_CONTROL,
-        REG_AC_CONTROL,
-        REG_LIGHT_CONTROL,
-        REG_AC_SILENT_CONTROL,
-        REG_KEY_SOUND,
-    }
-)
 
 # Stable keys for the four outputs, so entity ids survive these becoming
 # catalog-derived rather than hardcoded.
@@ -147,9 +129,12 @@ def _catalog_descriptions(product_key: str) -> list[SydpowerBinarySensorDescript
         name = state.get("function_name") or f"Bit {bit}"
         if parent is not None:
             name = f"{parent.get('function_name', '')} {name}".strip()
-        # Only an output that a control writes is demoted; its ports are not
-        # separately controllable, so they remain primary.
-        diagnostic = state.get("holding_index") in WRITTEN_CONTROL_REGISTERS
+        # A state carrying a control register is something a control writes, so
+        # its sensor is diagnostic and the control is the primary entity. Children
+        # have no register of their own, nothing writes them, and they are the only
+        # view of which port is live — so they stay primary. Read from the catalog
+        # rather than a list of registers kept in step by hand.
+        diagnostic = "holding_index" in state
         descriptions.append(_describe(bit, name, diagnostic=diagnostic))
 
     return _number_duplicates(descriptions)
