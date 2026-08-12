@@ -6,14 +6,24 @@ Modbus parameters (address, register count, protocol version). All functions
 degrade gracefully when the catalog file is absent — callers receive ``None`` and
 fall back to the defaults in ``constants.py``.
 
-``product_catalog.json`` was scraped from the BrightEMS application and carries
-only the ``products`` and ``categories`` sections. The original also held a
-438 KB ``features`` section, dropped because nothing reads it and its contents
-actively mislead: a feature's child ``input_index`` is a sub-index within its
-parent, **not** a register number, and reading those as registers produced
-wildly wrong sensor values. Its labels are also French. The unabridged file is
-kept at ``reference/product_catalog.full.json`` in the repository, outside this
-package, because no tooling to regenerate it survives here.
+``product_catalog.json`` is generated from the BrightEMS application by
+``analysis/extract_catalog.py``, which unpacks the XAPK, beautifies the uni-app
+bundle and normalises what it finds into ``products``, ``categories``,
+``settings``, ``states``, ``faults`` and ``firmware_gates``.
+
+``input_index`` and ``holding_index`` are both meaningful, contrary to an earlier
+reading of this file that treated them as unusable sub-indexes:
+
+* ``holding_index`` is a real holding-register number. Verified against hardware
+  for all four controls and all seven settings of the test device.
+* ``input_index`` is a **bit position in the combined 32-bit state word** — input
+  register 42 as the low half and 41 as the high half, see ``state_word`` — not
+  an input-register number. Read as register numbers these produced wildly wrong
+  values, which is what the earlier reading was reacting to. As bit positions all
+  17 states of the test device validated.
+
+Labels are English in the generated file; the app ships French and Chinese
+strings for some products, which ``fault_messages.py`` overrides on read.
 """
 
 from __future__ import annotations

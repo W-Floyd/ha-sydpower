@@ -162,7 +162,7 @@ and "Flash Mode", named by the catalog — rather than a switch plus a select.
 
 | Register | Function | Scale | Notes |
 | --- | --- | --- | --- |
-| 22 | AC frequency | ÷100 → Hz | 5998–6001 = 59.98–60.01 Hz |
+| 22 | **AC input** (mains) frequency | ÷100 → Hz | 5998–6001 = 59.98–60.01 Hz; 0 with no mains |
 | 21 | **AC input** (mains) voltage | ÷10 → V | Steady regardless of output state |
 | 18 | **AC output** (inverter) voltage | ÷10 → V | Floats when the output is off |
 
@@ -181,6 +181,30 @@ The integration therefore reports the output voltage only while the output is on
 otherwise it publishes nothing rather than recording that noise. Until this test
 the pair was indistinguishable, because mains had been connected and the output
 enabled for every earlier sample.
+
+A second test — mains unplugged, AC output left **on**, so the inverter ran from
+the battery — confirmed the assignment from the other direction and settled the
+frequency register with it:
+
+```
+                  [21] in V   [18] out V   [22] Hz   [19]
+mains on, out off      117.8         40.8     59.97    600
+mains off, out off       0.3         31.0      0.00    600
+mains off, out ON        0.3        120.7      0.00    600
+```
+
+Register 21 collapses to 0.3 V with the mains gone while 18 rises to 120.7 V from
+the battery alone, which is the reverse of the first test and leaves no ambiguity.
+Register 22 follows the mains rather than the inverter — it reads 0.00 Hz while
+the output is producing — so it is **input** frequency. It is left ungated: 0 Hz
+beside register 21's 0 V is a truthful "no mains", not the floating noise that
+gating exists to suppress.
+
+Register 19 is the notable negative. It held exactly 600 in all three states,
+including with no mains and with the inverter stopped. A live frequency reading
+falls to zero when its source stops, as 22 does, so 19 is not a measurement of
+either side; it looks like a nominal 60.0 Hz rating for a 120 V-region unit. This
+disproves the earlier guess that it was AC input frequency at another scale.
 
 ### Power and duration: registers 3, 4, 6, 20, 39, 58
 
@@ -316,9 +340,16 @@ expansion pack ever counts.
 
 - Whether DC/solar input appears in register 4, and how it enters the input
   power identity. Needs a panel or DC source connected.
-- `input[19]`, constant 600. Not read literally anywhere in the app.
-- Which of `input[18]` and `input[21]` is AC input versus output.
-- State-word bits 17, 19, 24, 29, 30 and 31, which drive the app's animations.
+- `input[19]`, constant 600 across every mains and inverter state — narrowed to a
+  nominal 60.0 Hz rating rather than a measurement, but not confirmed. Not read
+  literally anywhere in the app.
+- State-word bits 24, 29, 30 and 31, which drive the app's animations. Bits 17 and
+  19 were set in every frame with mains present and clear in every frame without,
+  and bit 22 the exact inverse, so those three are mains-presence and on-battery
+  flags — the catalog names none of them, and two frames either side of one
+  unplugging is too little to call which is which. Bit 21 was set throughout.
+  The integration reads mains presence from register 21's voltage instead, which
+  needs no such guess.
 - Expansion battery state of charge at `input[53]`, `[55]`, `[66]` and `[67]`:
   zero when absent, otherwise permille with a 10 offset, per the app and the
   earlier ESP-FBot integration. Untestable here without expansion packs.

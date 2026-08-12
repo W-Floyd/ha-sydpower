@@ -692,7 +692,7 @@
   ],
   "requirements": [
     "bleak-retry-connector>=3.6.0",
-    "sydpower @ https://github.com/W-Floyd/ha-sydpower/releases/download/v0.3.7/sydpower-0.3.7-py3-none-any.whl"
+    "sydpower @ https://github.com/W-Floyd/ha-sydpower/releases/download/v0.4.0/sydpower-0.4.0-py3-none-any.whl"
   ],
-  "version": "0.3.7"
+  "version": "0.4.0"
 }

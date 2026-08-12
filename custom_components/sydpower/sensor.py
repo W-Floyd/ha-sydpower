@@ -93,13 +93,17 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SydpowerSensorDescription(
-        key="ac_frequency",
-        name="AC frequency",
+        key="ac_input_frequency",
+        name="AC input frequency",
         register=22,
         divisor=100,
         native_unit_of_measurement=UnitOfFrequency.HERTZ,
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
+        # Input side, not output: with the mains unplugged this went to 0 while the
+        # inverter was still running and producing 120.7 V on register 18. Left
+        # ungated for that reason — 0 Hz alongside register 21's 0 V is an accurate
+        # report of "no mains", not the floating noise that gating exists to hide.
     ),
     SydpowerSensorDescription(
         key="ac_input_voltage",
@@ -232,8 +236,11 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
 #   139.8, 69.2, 118.4, 90.9 and 69.4 V — so 21 is the mains input and 18 the
 #   inverter output.
 #   input 42 — a bitfield, not a wattage, despite its plausible magnitude.
-#   input 19 — constant 600, most likely AC input frequency at a different
-#     scale from register 22; unconfirmed.
+#   input 19 — constant 600. Not a frequency measurement: it held 600 with the
+#     mains unplugged and again with the inverter off, where any live frequency
+#     reading drops to zero as register 22 does. That invariance makes it a
+#     nominal rating rather than a measurement, and 60.0 Hz is the plausible
+#     reading for a 120 V unit. A constant is not worth an entity either way.
 
 
 async def async_setup_entry(

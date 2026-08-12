@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-12
+
+The catalog stops being a lookup table for a few constants and becomes the source
+the entities are built from, so a product this was never tested against gets its
+own controls rather than the test device's. Alongside that, several registers were
+resolved against hardware — including the two AC voltages, which had been
+indistinguishable while mains was connected and the output enabled.
+
+**Entity unique IDs changed.** State entities are now keyed on the catalog's own
+identifier instead of a hardcoded list, and the AC frequency sensor was renamed to
+`ac_input_frequency`. Remove and re-add the device; the old entities are orphaned
+and will show as unavailable until they are deleted.
+
+### Added
+- **Controls derived from the catalog** rather than hardcoded: switches, selects,
+  binary sensors and the light's effect list. `holding_index` turned out to be a
+  real register number, validated against hardware for all four controls and all
+  seven settings of the test device.
+- **The light is a light entity** with its modes — Always On, SOS Mode, Flash Mode
+  — as effects, instead of a switch plus a separate mode select. Register 27 holds
+  a mode, which is what Home Assistant's effect model describes.
+- **Scheduled charging as a datetime entity.** The device stores a countdown in
+  minutes, so the requested wall-clock time is remembered and reported verbatim,
+  with the countdown used only to check it. The value therefore never drifts, and
+  a schedule changed from the app still wins. Re-arming daily is left to an
+  automation, the schedule being one-shot on the device.
+- **Buttons** to cancel a scheduled charge and to shut the unit down remotely. The
+  shutdown button ships disabled — Home Assistant has no confirmation step for a
+  button press where the app puts a dialog in front of it.
+- **Maximum charging current**, whose ceiling is read from holding 17 rather than
+  fixed, bounded by the write allowlist as a backstop.
+- **A problem sensor decoding device faults**, with English wording supplied for
+  the 26 messages the backend ships untranslated.
+- **Firmware version diagnostics** for the AC, BMS, PV and panel controllers, and
+  setting options gated on panel firmware as the app gates them.
+- **Model reporting** — the test unit identifies as `P210-A0E01`.
+- `analysis/extract_catalog.py`, which regenerates the catalog from an XAPK,
+  including the authenticated endpoints, and regenerates the manifest's 169
+  Bluetooth matchers so they cannot drift from it.
+
+### Fixed
+- **The charge threshold's lower bound was wrong**, given as 100 permille where
+  the app's slider floor is 600.
+- **Two switches were wrongly removed** as unverified. Key sound (register 56) and
+  AC silent charging (register 57) are both written by the app; the catalog simply
+  does not describe them, which is not the same as the device not having them.
+- **A multi-register write on protocol v0 raises** instead of silently writing only
+  the first value.
+- **Deploying a manifest whose pinned wheel is not yet downloadable is refused**,
+  after a deploy raced CI by 17 seconds and left Home Assistant unable to resolve
+  the requirement.
+
+### Changed
+- **State sensors are diagnostic only where a control already writes the same
+  thing**, derived from the catalog rather than from a maintained register list.
+- **Registers 18 and 21 are now distinguished**: 21 is the mains input, 18 the
+  inverter output, and the output reading is suppressed while the output is off
+  rather than recording the 70 V swing an unenergised output samples as.
+- **Register 22 is AC *input* frequency**, confirmed by it reading 0.00 Hz while
+  the inverter ran from the battery at 120.7 V.
+- **Register 19 is not a frequency measurement.** It held 600 with no mains and
+  again with the inverter stopped, where a live reading falls to zero.
+
 ## [0.3.7] - 2026-08-12
 
 First release verified end to end against real hardware in Home Assistant: a
