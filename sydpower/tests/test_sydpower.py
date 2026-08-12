@@ -883,3 +883,45 @@ class TestOutputChildren:
         from sydpower.catalog import get_output_children
 
         assert get_output_children(self.KEY, 99) == []
+
+
+class TestControllableStates:
+    """
+    Test which states correspond to something writable.
+
+    This is the invariant behind the integration's entity categories: a state
+    carrying a ``holding_index`` names a register a control writes, so its sensor
+    is diagnostic and the control is primary. A child has no register of its own,
+    so nothing writes it and its sensor stays primary.
+    """
+
+    KEY = "00004380-0000-1000-8000-00805F9B34FB_POWER-8043"
+
+    def test_only_parents_have_a_control_register(self):
+        from sydpower.catalog import get_product_states
+
+        for state in get_product_states(self.KEY):
+            if state.get("parent_id"):
+                assert "holding_index" not in state, state
+            else:
+                assert "holding_index" in state, state
+
+    def test_control_registers_are_all_writable(self):
+        """
+        Every state that names a register must be one the guard permits.
+
+        A state pointing at a register outside the allowlist would mean an entity
+        offering control that the safety check then refuses.
+        """
+        from sydpower.catalog import get_product_states
+        from sydpower.constants import WRITABLE_HOLDING_REGISTERS
+
+        registers = {
+            s["holding_index"]
+            for s in get_product_states(self.KEY)
+            if "holding_index" in s
+        }
+        assert registers, "no controllable states found"
+        assert registers <= set(WRITABLE_HOLDING_REGISTERS), sorted(
+            registers - set(WRITABLE_HOLDING_REGISTERS)
+        )
