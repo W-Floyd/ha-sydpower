@@ -233,3 +233,38 @@ There are two login paths, and which applies depends on the account:
   ignored and it answers "verification code wrong or expired". The script
   therefore calls `user/pub/sendEmailCode` and prompts for the code, or reads
   `BRIGHTEMS_CODE` if you would rather not be prompted.
+
+
+### Caching and re-use
+
+The user token is cached at `build/api/user_token.json` with mode 600 and reused
+automatically, so signing in is a one-off. `--refresh` deliberately does not
+invalidate it — that flag re-fetches API payloads, and discarding the token would
+mean another emailed code. Use `--relogin` to force a fresh sign-in.
+
+Two tokens are in play and they are **not** interchangeable:
+
+| Token | Carried in | Identifies |
+| --- | --- | --- |
+| anonymous access token | request body `token`, `x-basement-token` | the client, to the uniCloud gateway |
+| uni-id user token | `x-client-token` header, and `uniIdToken` in the args | the signed-in user, to the router |
+
+Substituting the user token for the gateway's returns
+`GATEWAY_INVALID_TOKEN / session_expired`.
+
+### What the authenticated endpoints contain
+
+`getFirmwareUpgradeHint` wraps its payload under `data`:
+
+- `AC_standby_time_list` — the setting gate table. Currently one rule, for
+  `POWER-0504` on panel version 1.7.
+- `product_version_list` — a second gate, matched on `ac_version`, used for the
+  firmware upgrade prompt.
+- `hint`, `tutorial_url`, `tutorial_title`, `enable` — upgrade prompt strings.
+
+`faultCode.getList` returns five fault groups, each naming the registers it reads
+in `byte_list` and decoding them bit by bit in `bit_list`: BMS AFE Status (47),
+BMS USER Status (48), Panel FaultCode (50, 51) and two more. Note these are a
+different bank from the firmware versions, which occupy holding 47-50 — the app
+reads versions from `holdingRegister` and faults from elsewhere, so do not
+conflate them. Decoding faults into entities is not implemented.

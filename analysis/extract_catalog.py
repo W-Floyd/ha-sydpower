@@ -205,8 +205,18 @@ def post(
     locale: str,
     token: str | None,
     attempts: int = 3,
+    user_token: str | None = None,
 ) -> Any:
-    """Sign and POST one request, retrying the connection resets the API throws."""
+    """
+    Sign and POST one request, retrying the connection resets the API throws.
+
+    Two tokens are in play and they are not interchangeable. *token* is the
+    anonymous access token that authenticates the client to the uniCloud gateway,
+    carried in the body and in `x-basement-token`. *user_token* is the uni-id
+    token identifying the signed-in user, carried in `x-client-token`. Putting a
+    user token where the gateway expects its own yields
+    `GATEWAY_INVALID_TOKEN / session_expired`.
+    """
     data = dict(data)
     data.setdefault("spaceId", config["space_id"])
     data.setdefault("timestamp", int(time.time() * 1000))
@@ -229,6 +239,8 @@ def post(
     }
     if token:
         headers["x-basement-token"] = token
+    # Always present, empty when not signed in, as the app does.
+    headers["x-client-token"] = user_token or ""
 
     request = urllib.request.Request(
         config["endpoint"] + "/client",
@@ -402,14 +414,22 @@ def load_user_token(
     cache: Path,
     anon_token: str,
     do_login: bool,
-    refresh: bool,
+    relogin: bool,
 ) -> str | None:
-    """Return a cached user token, logging in only if asked to."""
+    """
+    Return a cached user token, signing in only when necessary.
+
+    The cache is consulted regardless of --login so a one-off sign-in keeps
+    working on later runs. --refresh deliberately does not invalidate it: that
+    flag is about re-fetching API payloads, and dropping the token would mean
+    another emailed code. Use --relogin for that.
+    """
     path = cache / "user_token.json"
-    if path.exists() and not refresh:
+    if path.exists() and not relogin:
         log("auth", "using cached user token")
         return json.loads(path.read_text()).get("token")
     if not do_login:
+        log("auth", "no cached user token; pass --login to sign in")
         return None
 
     token = login(config, locale, anon_token)
@@ -441,22 +461,30 @@ def get_access_token(config: dict[str, str], locale: str) -> str:
     return token
 
 
-def call(config: dict[str, str], action: str, locale: str, token: str) -> Any:
+def call(
+    config: dict[str, str],
+    action: str,
+    locale: str,
+    token: str,
+    user_token: str | None = None,
+) -> Any:
     """Invoke one router action and return its unwrapped result."""
+    args: dict[str, Any] = {"$url": action, "data": {}, "encrypt": False}
+    if user_token:
+        # The router reads the user token from here as well as the header.
+        args["uniIdToken"] = user_token
     body = post(
         config,
         {
             "method": "serverless.function.runtime.invoke",
             "params": json.dumps(
-                {
-                    "functionTarget": ROUTER_FUNCTION,
-                    "functionArgs": {"$url": action, "data": {}, "encrypt": False},
-                },
+                {"functionTarget": ROUTER_FUNCTION, "functionArgs": args},
                 separators=(",", ":"),
             ),
         },
         locale,
         token,
+        user_token=user_token,
     )
     if body.get("error"):
         sys.exit(f"{action}: backend error {body['error']}")
@@ -476,6 +504,7 @@ def fetch(
     refresh: bool,
     user_token: str | None = None,
     do_login: bool = False,
+    relogin: bool = False,
 ) -> dict[str, Any]:
     """
     Return the raw API payloads, fetching only what is not already cached.
@@ -487,18 +516,15 @@ def fetch(
     payloads: dict[str, Any] = {}
     token: str | None = None
 
-    if not user_token and do_login:
+    if not user_token:
         token = get_access_token(config, locale)
-        user_token = load_user_token(config, locale, cache, token, do_login, refresh)
+        user_token = load_user_token(config, locale, cache, token, do_login, relogin)
 
     wanted = dict(ACTIONS)
     if user_token:
         wanted.update(AUTHENTICATED_ACTIONS)
     else:
-        log(
-            "fetch",
-            "skipping " + ", ".join(AUTHENTICATED_ACTIONS) + " (needs --login or --token)",
-        )
+        log("fetch", "skipping " + ", ".join(AUTHENTICATED_ACTIONS) + " (not signed in)")
 
     for name, action in wanted.items():
         path = cache / f"{name}.{locale}.json"
@@ -509,9 +535,15 @@ def fetch(
         if token is None:
             token = get_access_token(config, locale)
         log("fetch", action)
-        # The user token replaces the anonymous one for user-scoped actions.
-        use = user_token if name in AUTHENTICATED_ACTIONS else token
-        payloads[name] = call(config, action, locale, use)
+        # The gateway always gets the anonymous token; user-scoped actions
+        # additionally carry the uni-id token.
+        payloads[name] = call(
+            config,
+            action,
+            locale,
+            token,
+            user_token=user_token if name in AUTHENTICATED_ACTIONS else None,
+        )
         path.write_text(json.dumps(payloads[name], ensure_ascii=False, indent=1))
         log("cache", f"{name} -> {path.name} ({path.stat().st_size // 1024} KB)")
 
@@ -584,7 +616,9 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
 
     # Firmware gates: the app hides some setting options on specific product +
     # panel-version combinations. Only present when fetched with a user token.
-    hint = payloads.get("firmware_hint") or {}
+    # The router wraps its payload in a code/msg envelope, so the useful fields
+    # sit under `data`.
+    hint = (payloads.get("firmware_hint") or {}).get("data") or {}
     gates = hint.get("AC_standby_time_list")
     if gates:
         catalog["firmware_gates"] = {"ac_standby_time": gates}
@@ -734,6 +768,11 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--relogin",
+        action="store_true",
+        help="discard the cached user token and sign in again",
+    )
+    parser.add_argument(
         "--token",
         default=os.environ.get("BRIGHTEMS_TOKEN"),
         help=(
@@ -786,7 +825,7 @@ def main() -> int:
     if args.stage == "config":
         return 0
 
-    payloads = fetch(config, args.locale, args.workdir / "api", args.refresh, args.token, args.login)
+    payloads = fetch(config, args.locale, args.workdir / "api", args.refresh, args.token, args.login, args.relogin)
     if args.stage == "fetch":
         return 0
 

@@ -38828,5 +38828,13 @@
     "W"
    ]
   }
- ]
+ ],
+ "firmware_gates": {
+  "ac_standby_time": [
+   {
+    "product_name": "POWER-0504",
+    "panel_version": "1.7"
+   }
+  ]
+ }
 }
