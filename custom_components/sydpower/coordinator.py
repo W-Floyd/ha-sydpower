@@ -163,6 +163,12 @@ class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
                 holding = await device.read_holding_registers()
                 input_regs = await device.read_input_registers()
         except (SydpowerError, BleakError, TimeoutError) as err:
+            # The write may already have landed and only the read-back failed, in
+            # which case entities still show the pre-write value while the device
+            # holds the new one. A scheduled poll would eventually correct that,
+            # but not if polling is disabled for this entry, so converge
+            # explicitly. This is debounced and must not mask the original error.
+            await self.async_request_refresh()
             raise HomeAssistantError(
                 f"Failed to write register {register} on {self._device_name}: {err}"
             ) from err
