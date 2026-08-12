@@ -24,6 +24,8 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from sydpower.catalog import active_faults, fault_value, get_faults
+
 from .const import (
     DOMAIN,
     STATE_AC_BIT,
@@ -88,6 +90,8 @@ async def async_setup_entry(
         for desc in BINARY_SENSOR_DESCRIPTIONS
     ]
     entities.append(SydpowerConnectivitySensor(coordinator, entry))
+    if get_faults():
+        entities.append(SydpowerProblemSensor(coordinator, entry))
     async_add_entities(entities)
 
 
@@ -155,3 +159,60 @@ class SydpowerConnectivitySensor(SydpowerEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         return self.coordinator.last_update_success
+
+
+class SydpowerProblemSensor(SydpowerEntity, BinarySensorEntity):
+    """
+    On when the device reports any fault.
+
+    The catalog defines five fault groups over input-bank registers, decoded bit
+    by bit — 42 named bits in total. Exposing each as its own entity would bury
+    the device in mostly-inactive sensors, so this reports whether anything is
+    wrong and lists the active messages as attributes.
+
+    Only *named* bits count. Some bits are set on a perfectly healthy device
+    (registers 47 and 48 read 0x3000 and 0x4000 here) and carry no fault message;
+    the app ignores those, and so does this.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_name = "Problem"
+
+    def __init__(
+        self,
+        coordinator: SydpowerCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator, entry, "problem")
+
+    def _messages(self) -> list[str] | None:
+        data = self.coordinator.data
+        if data is None:
+            return None
+        return active_faults(data.input)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.coordinator.data is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        messages = self._messages()
+        return None if messages is None else bool(messages)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """List the active faults, plus each group's raw value for debugging."""
+        messages = self._messages() or []
+        attributes: dict[str, object] = {"active_faults": messages}
+
+        data = self.coordinator.data
+        if data is not None:
+            raw = {}
+            for group in get_faults():
+                value = fault_value(group.get("registers") or [], data.input)
+                if value is not None:
+                    raw[group["name"]] = f"0x{value:08X}"
+            attributes["raw"] = raw
+        return attributes

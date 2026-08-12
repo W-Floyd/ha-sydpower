@@ -618,6 +618,33 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
     # panel-version combinations. Only present when fetched with a user token.
     # The router wraps its payload in a code/msg envelope, so the useful fields
     # sit under `data`.
+    # Fault groups: registers in the *input* bank, decoded bit by bit. The app
+    # reads these from inputRegister, which is a different address space from the
+    # firmware versions at holding 47-50 despite the overlapping numbers.
+    #
+    # Fetched without a product_id, which returns every group with its name; the
+    # per-product response omits `name`. Groups are therefore not filtered per
+    # product, so a different family could in principle use other registers.
+    fault_rows = (payloads.get("fault_codes") or {}).get("rows") or []
+    faults = []
+    for group in fault_rows:
+        registers = group.get("byte_list") or []
+        bits = {
+            str(b["bit"]): (b.get("fault_message") or {}).get("lang_text")
+            for b in (group.get("bit_list") or [])
+            if (b.get("fault_message") or {}).get("lang_text")
+        }
+        if registers and bits:
+            faults.append(
+                {"name": group.get("name") or f"Registers {registers}",
+                 "registers": registers,
+                 "bits": bits}
+            )
+    if faults:
+        catalog["faults"] = faults
+        total = sum(len(f["bits"]) for f in faults)
+        log("build", f"{len(faults)} fault group(s), {total} named bit(s)")
+
     hint = (payloads.get("firmware_hint") or {}).get("data") or {}
     gates = hint.get("AC_standby_time_list")
     if gates:

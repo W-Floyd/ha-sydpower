@@ -263,8 +263,31 @@ Substituting the user token for the gateway's returns
 - `hint`, `tutorial_url`, `tutorial_title`, `enable` — upgrade prompt strings.
 
 `faultCode.getList` returns five fault groups, each naming the registers it reads
-in `byte_list` and decoding them bit by bit in `bit_list`: BMS AFE Status (47),
-BMS USER Status (48), Panel FaultCode (50, 51) and two more. Note these are a
-different bank from the firmware versions, which occupy holding 47-50 — the app
-reads versions from `holdingRegister` and faults from elsewhere, so do not
-conflate them. Decoding faults into entities is not implemented.
+in `byte_list` and decoding them bit by bit in `bit_list`:
+
+| Group | Registers | Named bits |
+| --- | --- | --- |
+| AC FaultCode | 43 | 10 |
+| PV FaultCode | 45 | 6 |
+| BMS AFE Status | 47 | 9 |
+| BMS USER Status | 48 | 6 |
+| Panel FaultCode | 50, 51 | 11 |
+
+These are **input**-bank registers. The numbers overlap the firmware versions at
+holding 47-50, which are a different address space: the app reads versions from
+`holdingRegister` and faults from `inputRegister`. Conflating them would report a
+firmware version as a fault bitfield.
+
+For a two-register group the *second* register supplies bits 0-15 and the first
+bits 16-31, so bit 17 of Panel FaultCode is bit 1 of register 50.
+
+Only bits carrying a message count as faults. A healthy device here reads 0x3000
+in register 47 and 0x4000 in register 48, and none of those bits are named — the
+app ignores unnamed bits, so those are status flags rather than problems.
+
+Fetched without a `product_id`, which returns every group along with its name;
+the per-product response omits `name`. Groups are therefore not filtered per
+product, so another product family could in principle use different registers.
+
+25 of the 42 messages are still Chinese despite `--locale en`; the backend's
+translations are incomplete, and there is nothing to be done about that here.

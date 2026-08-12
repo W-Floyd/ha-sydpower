@@ -38829,6 +38829,91 @@
    ]
   }
  ],
+ "faults": [
+  {
+   "name": "BMS AFE Status",
+   "registers": [
+    47
+   ],
+   "bits": {
+    "3": "AFE放电2级过流",
+    "5": "AFE输出短路",
+    "11": "AFE放电高温",
+    "1": "AFE single battery cell undervoltage",
+    "4": "AFE充电过流",
+    "2": "AFE discharge overcurrent level 1",
+    "10": "Low temperature whtn AFE discharging",
+    "8": "Low temperature when AFE charging",
+    "9": "AFE充电高温"
+   }
+  },
+  {
+   "name": "Panel FaultCode",
+   "registers": [
+    50,
+    51
+   ],
+   "bits": {
+    "17": "PD2 output overcurrent",
+    "4": "24V DC输出过流",
+    "0": "USB1输出过流",
+    "7": "Abnormal panel board temperature",
+    "18": "无线充电故障",
+    "16": "PD1 output overcurrent",
+    "21": "PD4 output overcurrent",
+    "1": "QC1输出过流",
+    "2": "QC2 output overcurrent",
+    "3": "12V DC输出过流",
+    "20": "PD3输出过流"
+   }
+  },
+  {
+   "name": "BMS USER Status",
+   "registers": [
+    48
+   ],
+   "bits": {
+    "2": "电池包充电高温",
+    "1": "电池包放电低温",
+    "5": "AFE fault",
+    "0": "电池包放电高温",
+    "3": "电池包充电低温",
+    "4": "Abnormal temperature of battery pack MOS"
+   }
+  },
+  {
+   "name": "PV FaultCode",
+   "registers": [
+    45
+   ],
+   "bits": {
+    "5": "电池电压过高故障",
+    "0": "PV板温度异常",
+    "1": "DC 输入电压过高",
+    "2": "DC 输入电流过高",
+    "4": "DC 12V通道3过流",
+    "3": "DC 12V通道1和2过流"
+   }
+  },
+  {
+   "name": "AC FaultCode",
+   "registers": [
+    43
+   ],
+   "bits": {
+    "14": "电池电压异常",
+    "4": "Overload fault level 3",
+    "8": "Abnormal mains frequency",
+    "13": "系统异常",
+    "0": "Output short circuit fault",
+    "3": "过载故障等级2",
+    "9": "市电电压异常",
+    "15": "Temperature fault",
+    "2": "Overload fault level 1",
+    "5": "Abnormal off-grid output voltage"
+   }
+  }
+ ],
  "firmware_gates": {
   "ac_standby_time": [
    {

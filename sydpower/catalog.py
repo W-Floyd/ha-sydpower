@@ -169,6 +169,48 @@ def gated_setting_options(
     return options
 
 
+def get_faults() -> list[dict]:
+    """
+    Return the fault group definitions: name, input registers, and named bits.
+
+    Registers are in the **input** bank. The numbers overlap the firmware version
+    registers at holding 47-50, which are a different address space entirely.
+    """
+    return _load().get("faults", [])
+
+
+def fault_value(registers: list[int], input_registers: list[int]) -> int | None:
+    """
+    Combine a fault group's registers into one bitfield.
+
+    A single register supplies bits 0-15. Two registers are combined the way the
+    app does it: the *second* register provides the low 16 bits and the first the
+    high 16, so a 32-bit group's bit 17 is bit 1 of its first register.
+    """
+    if not registers or any(r >= len(input_registers) for r in registers):
+        return None
+    if len(registers) == 1:
+        return input_registers[registers[0]]
+    if len(registers) == 2:
+        return input_registers[registers[1]] | (input_registers[registers[0]] << 16)
+    return None
+
+
+def active_faults(input_registers: list[int]) -> list[str]:
+    """Return the messages for every named fault bit currently set."""
+    messages: list[str] = []
+    for group in get_faults():
+        value = fault_value(group.get("registers") or [], input_registers)
+        if value is None:
+            continue
+        for bit, message in sorted(
+            group.get("bits", {}).items(), key=lambda kv: int(kv[0])
+        ):
+            if message and value >> int(bit) & 1:
+                messages.append(message)
+    return messages
+
+
 def list_product_keys() -> list[str]:
     """Return all known product keys from the catalog."""
     return list(_load().get("products", {}).keys())

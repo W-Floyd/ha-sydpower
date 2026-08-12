@@ -262,6 +262,76 @@ class TestProductSettings:
                 )
 
 
+class TestFaultDecoding:
+    """
+    Test decoding the device's fault bitfields.
+
+    These live in the *input* bank. Their register numbers overlap the firmware
+    versions at holding 47-50, which are a different address space — conflating
+    the two would report a firmware version as a fault bitfield.
+    """
+
+    def test_catalog_defines_fault_groups(self):
+        from sydpower.catalog import get_faults
+
+        groups = get_faults()
+        assert groups, "catalog has no fault groups"
+        for group in groups:
+            assert group["registers"], group
+            assert group["bits"], group
+
+    def test_single_register_supplies_the_low_bits(self):
+        from sydpower.catalog import fault_value
+
+        registers = [0] * 60
+        registers[43] = 0b1010
+        assert fault_value([43], registers) == 0b1010
+
+    def test_two_registers_put_the_second_in_the_low_half(self):
+        """
+        Mirrors the app: byte_list[1] is bits 0-15, byte_list[0] is bits 16-31.
+
+        So a 32-bit group's bit 17 is bit 1 of its *first* register.
+        """
+        from sydpower.catalog import fault_value
+
+        registers = [0] * 60
+        registers[50] = 0b10  # first register, bit 1 -> combined bit 17
+        registers[51] = 0b01  # second register, bit 0 -> combined bit 0
+        value = fault_value([50, 51], registers)
+        assert value >> 17 & 1
+        assert value & 1
+        assert value == (0b10 << 16) | 0b01
+
+    def test_out_of_range_registers_return_none(self):
+        from sydpower.catalog import fault_value
+
+        assert fault_value([99], [0] * 10) is None
+
+    def test_healthy_device_reports_no_faults(self):
+        """
+        Values read from real hardware with nothing wrong.
+
+        Registers 47 and 48 do have bits set — 0x3000 and 0x4000 — but those bits
+        carry no fault message, and the app ignores unnamed bits.
+        """
+        from sydpower.catalog import active_faults
+
+        registers = [0] * 80
+        registers[47] = 0x3000
+        registers[48] = 0x4000
+        assert active_faults(registers) == []
+
+    def test_a_named_bit_produces_its_message(self):
+        from sydpower.catalog import active_faults, get_faults
+
+        group = next(g for g in get_faults() if g["registers"] == [43])
+        bit = min(int(b) for b in group["bits"])
+        registers = [0] * 80
+        registers[43] = 1 << bit
+        assert active_faults(registers) == [group["bits"][str(bit)]]
+
+
 class TestFirmwareGate:
     """
     Test hiding setting options that a device's firmware cannot honour.
