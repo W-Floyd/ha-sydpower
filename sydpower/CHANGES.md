@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-08-12
+
+Follow-ups from running 0.4.0 on hardware.
+
+### Fixed
+- **The catalog is no longer read from inside the event loop.** Every platform
+  derives its entities from the catalog during setup, and the file is loaded lazily
+  on the first lookup, so whichever platform ran first read it from the event loop
+  — which Home Assistant detects and warns about twice per startup. It is now
+  warmed once from an executor thread before any platform is forwarded, and in the
+  config flow before a discovered device is resolved, leaving every accessor a pure
+  cache read.
+- **No more "AC output AC".** The AC output's sole port is called "AC" in the
+  catalog and the DC output's is called "DC", so qualifying each port with its
+  parent produced "AC output AC" and "DC output DC". A port contributing no word
+  its parent lacks is that output's only port and says nothing the parent does not,
+  so it is now dropped rather than named — leaving one "AC output" and one "DC
+  output". Ports that do contribute something are untouched: "DC output XT60",
+  "DC output Car charging", "USB output PD 100W".
+
+  This drops two state-word bits from the entity list, 18 and 15, whose parents are
+  bits 27 and 26. Bit 18 tracked bit 27 exactly across every frame captured while
+  the mains and the AC output were switched independently, so nothing observable is
+  lost; if they are ever seen to diverge, the port deserves a name of its own
+  rather than its parent's.
+
+### Note
+Six entities from before 0.4.0 linger in the registry as unavailable, their unique
+IDs having changed: `binary_sensor.*_{ac,dc,usb}_output`, `binary_sensor.*_light`,
+`sensor.*_ac_frequency` and `sensor.*_ac_voltage`. Delete them; nothing recreates
+them. The controls that appear to have gone missing — AC charging power, key sound,
+the standby times — have only moved to the device page's Configuration section,
+being `EntityCategory.CONFIG`.
+
 ## [0.4.0] - 2026-08-12
 
 The catalog stops being a lookup table for a few constants and becomes the source

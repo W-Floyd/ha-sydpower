@@ -75,6 +75,23 @@ class SydpowerBinarySensorDescription(BinarySensorEntityDescription):
     bit: int
 
 
+def _adds_nothing_to(child_name: str, parent_name: str) -> bool:
+    """
+    Whether a port's name contributes no word its parent's does not already have.
+
+    Most ports contribute one and read well qualified — "DC output XT60", "USB
+    output PD 100W". But the AC output's sole port is called "AC" in the catalog
+    and the DC output's is called "DC", which qualify to "AC output AC" and "DC
+    output DC". Such a child is the output's only port, so it says nothing the
+    parent does not; it is dropped rather than named, leaving one "AC output".
+    """
+    parent_words = set(parent_name.casefold().split())
+    child_words = child_name.casefold().split()
+    return bool(parent_words) and bool(child_words) and all(
+        word in parent_words for word in child_words
+    )
+
+
 def _describe(
     key: str,
     bit: int,
@@ -121,7 +138,17 @@ def _catalog_descriptions(product_key: str) -> list[SydpowerBinarySensorDescript
 
         name = state.get("function_name") or f"Bit {bit}"
         if parent is not None:
-            name = f"{parent.get('function_name', '')} {name}".strip()
+            parent_name = parent.get("function_name") or ""
+            if _adds_nothing_to(name, parent_name):
+                # The output's only port, carrying the parent's name and nothing
+                # more. The parent's own sensor already reports under that name.
+                _LOGGER.debug(
+                    "Skipping port %r of %r: it duplicates its parent's name",
+                    name,
+                    parent_name,
+                )
+                continue
+            name = f"{parent_name} {name}".strip()
         # A state carrying a control register is something a control writes, so
         # its sensor is diagnostic and the control is the primary entity. Children
         # have no register of their own, nothing writes them, and they are the only

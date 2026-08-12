@@ -10,6 +10,8 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
+from sydpower.catalog import preload
+
 from .const import (
     CONF_ADDRESS,
     CONF_MODBUS_ADDRESS,
@@ -37,6 +39,13 @@ PLATFORMS = [
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sydpower from a config entry."""
     address: str = entry.data[CONF_ADDRESS]
+
+    # Warm the catalog from a thread before any platform queries it. Every platform
+    # derives its entities from the catalog during setup, and the first accessor to
+    # run would otherwise read the file from inside the event loop — which Home
+    # Assistant detects and warns about. One executor call makes all of them cache
+    # reads; the catalog is immutable for the life of the process.
+    await hass.async_add_executor_job(preload)
 
     # Distinguish "no Bluetooth at all" from "this device is out of range" — the
     # two need very different things from the user.

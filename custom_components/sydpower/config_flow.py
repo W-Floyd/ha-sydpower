@@ -15,7 +15,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_ADDRESS
 
 from sydpower.constants import DEVICE_NAME_PREFIXES
-from sydpower.catalog import get_device_params, get_product_model
+from sydpower.catalog import get_device_params, get_product_model, preload
 
 from .const import (
     CONF_MODBUS_ADDRESS,
@@ -86,6 +86,18 @@ class SydpowerConfigFlow(ConfigFlow, domain=DOMAIN):
         }
         return await self.async_step_bluetooth_confirm()
 
+    async def _async_params_from_service_info(
+        self, service_info: BluetoothServiceInfoBleak
+    ) -> dict[str, Any]:
+        """
+        Resolve Modbus parameters, warming the catalog off the event loop first.
+
+        The lookup itself is a dict access, but the catalog file is read lazily on
+        the first one, and here that first one would happen inside the event loop.
+        """
+        await self.hass.async_add_executor_job(preload)
+        return _params_from_service_info(service_info)
+
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -96,7 +108,7 @@ class SydpowerConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             return self.async_create_entry(
                 title=info.name,
-                data=_params_from_service_info(info),
+                data=await self._async_params_from_service_info(info),
             )
 
         return self.async_show_form(
@@ -120,7 +132,7 @@ class SydpowerConfigFlow(ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
                 title=service_info.name,
-                data=_params_from_service_info(service_info),
+                data=await self._async_params_from_service_info(service_info),
             )
 
         # Collect all Sydpower devices visible in the current HA BT scan cache.

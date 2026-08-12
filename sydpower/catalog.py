@@ -48,6 +48,18 @@ def _load() -> dict:
     return _cache
 
 
+def preload() -> None:
+    """
+    Read and cache the catalog now, so later lookups touch no disk.
+
+    Every accessor loads the file on first use, which is fine for a script but not
+    for an asyncio application: Home Assistant detects the read inside its event
+    loop and warns. Calling this once from an executor thread — before anything
+    that queries the catalog — leaves the rest of the accessors pure cache reads.
+    """
+    _load()
+
+
 def invalidate_cache() -> None:
     """Force the next call to re-read the catalog file from disk."""
     global _cache
