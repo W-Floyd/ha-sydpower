@@ -87,6 +87,16 @@ THRESHOLD_SCALE = 10
 # them — see sydpower/calibration.py for the measurements and the reasoning.
 CONF_CALIBRATION_SAMPLES = "calibration_samples"
 
+# The three power registers a calibration sample records. A sample must always
+# hold the *raw* register values, never what the sensors display: once a correction
+# is active the sensors are corrected, and fitting a new sample against corrected
+# readings would measure the residual error and add it to the existing correction.
+# The options flow therefore reads these registers itself rather than asking for
+# them, so a sample cannot be contaminated by the correction it will replace.
+REG_INPUT_POWER = 6
+REG_OUTPUT_POWER = 39
+REG_CHARGE_POWER = 3
+
 # Fields of one observation, named to match CalibrationSample's arguments so a
 # stored dict can be splatted straight into it.
 CONF_SAMPLE_CHARGE_REPORTED = "charge_reported"
@@ -99,5 +109,14 @@ CONF_SAMPLE_IN_TRUE = "in_true"
 CONF_ACTION = "action"
 ACTION_KEEP = "keep"
 ACTION_ADD_SAMPLE = "add_sample"
+ACTION_REVIEW_SAMPLES = "review_samples"
 ACTION_CLEAR_SAMPLES = "clear_samples"
-ACTIONS = (ACTION_KEEP, ACTION_ADD_SAMPLE, ACTION_CLEAR_SAMPLES)
+ACTIONS = (
+    ACTION_KEEP,
+    ACTION_ADD_SAMPLE,
+    ACTION_REVIEW_SAMPLES,
+    ACTION_CLEAR_SAMPLES,
+)
+
+# Which stored samples to drop, on the review form.
+CONF_REMOVE_SAMPLES = "remove"

@@ -19,6 +19,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
+import homeassistant.helpers.config_validation as cv
 
 from sydpower.constants import DEVICE_NAME_PREFIXES
 from sydpower.calibration import CalibrationSample, fit_correction
@@ -28,8 +29,10 @@ from .const import (
     ACTION_ADD_SAMPLE,
     ACTION_CLEAR_SAMPLES,
     ACTION_KEEP,
+    ACTION_REVIEW_SAMPLES,
     ACTIONS,
     CONF_ACTION,
+    CONF_REMOVE_SAMPLES,
     CONF_CALIBRATION_SAMPLES,
     CONF_MODBUS_ADDRESS,
     CONF_POLL_INTERVAL,
@@ -38,6 +41,9 @@ from .const import (
     CONF_SAMPLE_IN_TRUE,
     CONF_SAMPLE_OUT_REPORTED,
     CONF_SAMPLE_OUT_TRUE,
+    REG_CHARGE_POWER,
+    REG_INPUT_POWER,
+    REG_OUTPUT_POWER,
     MAX_POLL_INTERVAL,
     MIN_POLL_INTERVAL,
     POLL_INTERVAL,
@@ -215,6 +221,8 @@ class SydpowerOptionsFlow(OptionsFlow):
             self._poll_interval = user_input[CONF_POLL_INTERVAL]
             if action == ACTION_ADD_SAMPLE:
                 return await self.async_step_add_sample()
+            if action == ACTION_REVIEW_SAMPLES:
+                return await self.async_step_review_samples()
             samples = [] if action == ACTION_CLEAR_SAMPLES else self._samples
             return self._save(samples)
 
@@ -240,34 +248,127 @@ class SydpowerOptionsFlow(OptionsFlow):
     async def async_step_add_sample(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Record one simultaneous reading of the device and external meters."""
+        """
+        Record what external meters say, against the device's raw registers.
+
+        Only the true figures are asked for. The device's own readings are taken
+        from the current poll rather than typed in, because the sensors are
+        corrected once a calibration exists — a sample transcribed from them would
+        measure the *residual* error and pile it on top of the correction already
+        applied, so each sample would be contaminated by the last. Reading the raw
+        registers keeps every sample independent of the fit it feeds.
+        """
         errors: dict[str, str] = {}
+        raw = self._raw_readings()
+
+        if raw is None:
+            # Nothing polled yet, so there are no device readings to pair with.
+            return self.async_abort(reason="no_data")
 
         if user_input is not None:
-            sample = {k: v for k, v in user_input.items() if v is not None}
-            has_out = "out_true" in sample and "out_reported" in sample
-            has_in = "in_true" in sample and "in_reported" in sample
-            if not has_out and not has_in:
-                # Without a true/reported pair there is no error to fit, and a
-                # half-filled observation would silently contribute nothing.
+            out_true = user_input.get(CONF_SAMPLE_OUT_TRUE)
+            in_true = user_input.get(CONF_SAMPLE_IN_TRUE)
+            if out_true is None and in_true is None:
                 errors["base"] = "sample_needs_a_pair"
+            elif not raw[CONF_SAMPLE_CHARGE_REPORTED]:
+                # The error only appears while charging, so a sample taken in
+                # pass-through would anchor the fit at zero and flatten it.
+                errors["base"] = "sample_needs_charging"
             else:
+                sample = dict(raw)
+                if out_true is not None:
+                    sample[CONF_SAMPLE_OUT_TRUE] = out_true
+                if in_true is not None:
+                    sample[CONF_SAMPLE_IN_TRUE] = in_true
                 return self._save([*self._samples, sample])
 
         return self.async_show_form(
             step_id="add_sample",
             errors=errors,
-            description_placeholders={"count": str(len(self._samples))},
+            description_placeholders={
+                "count": str(len(self._samples)),
+                "charge": f"{raw[CONF_SAMPLE_CHARGE_REPORTED]:.0f}",
+                "out": f"{raw[CONF_SAMPLE_OUT_REPORTED]:.0f}",
+                "in": f"{raw[CONF_SAMPLE_IN_REPORTED]:.0f}",
+            },
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_SAMPLE_CHARGE_REPORTED): _watts,
-                    vol.Optional(CONF_SAMPLE_OUT_REPORTED): _watts,
                     vol.Optional(CONF_SAMPLE_OUT_TRUE): _watts,
-                    vol.Optional(CONF_SAMPLE_IN_REPORTED): _watts,
                     vol.Optional(CONF_SAMPLE_IN_TRUE): _watts,
                 }
             ),
         )
+
+    async def async_step_review_samples(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """
+        List the stored samples and drop any that are selected.
+
+        Each is shown with its own error and its residual against the current fit,
+        so a sample taken at a bad moment — a load that shifted mid-reading, say —
+        can be identified and removed rather than the whole set being cleared.
+        """
+        samples = self._samples
+        if not samples:
+            return self.async_abort(reason="no_samples")
+
+        if user_input is not None:
+            drop = {int(index) for index in user_input.get(CONF_REMOVE_SAMPLES, [])}
+            return self._save(
+                [s for i, s in enumerate(samples) if i not in drop]
+            )
+
+        model = fit_correction([CalibrationSample(**s) for s in samples])
+        choices: dict[str, str] = {}
+        for index, stored in enumerate(samples):
+            sample = CalibrationSample(**stored)
+            error = sample.error
+            fitted = model.offset + model.slope * sample.charge_reported
+            residual = None if error is None else error - fitted
+            label = f"{sample.charge_reported:.0f} W charging"
+            if sample.out_true is not None and sample.out_reported is not None:
+                label += f", out {sample.out_reported:.0f}->{sample.out_true:.0f}"
+            if sample.in_true is not None and sample.in_reported is not None:
+                label += f", in {sample.in_reported:.0f}->{sample.in_true:.0f}"
+            if error is not None:
+                label += f" (error {error:+.0f} W"
+                if residual is not None:
+                    label += f", residual {residual:+.0f} W"
+                label += ")"
+            choices[str(index)] = label
+
+        return self.async_show_form(
+            step_id="review_samples",
+            description_placeholders={"fit": self._describe_fit()},
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(CONF_REMOVE_SAMPLES, default=[]): cv.multi_select(
+                        choices
+                    )
+                }
+            ),
+        )
+
+    def _raw_readings(self) -> dict[str, float] | None:
+        """
+        The device's uncorrected power registers from the latest poll.
+
+        ``None`` when nothing has been read yet. These are read straight from the
+        register snapshot, so they are unaffected by any correction in force.
+        """
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        data = getattr(coordinator, "data", None)
+        if data is None or not data.input:
+            return None
+        registers = data.input
+        if len(registers) <= max(REG_INPUT_POWER, REG_OUTPUT_POWER, REG_CHARGE_POWER):
+            return None
+        return {
+            CONF_SAMPLE_CHARGE_REPORTED: float(registers[REG_CHARGE_POWER]),
+            CONF_SAMPLE_OUT_REPORTED: float(registers[REG_OUTPUT_POWER]),
+            CONF_SAMPLE_IN_REPORTED: float(registers[REG_INPUT_POWER]),
+        }
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 

@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-08-12
+
+Completes the calibration flow 0.5.0 introduced, which had a design flaw serious
+enough that it should not be used: samples could be contaminated by the correction
+they were meant to replace.
+
+### Fixed
+- **A calibration sample can no longer be corrupted by the existing correction.**
+  0.5.0 asked for the device's own readings alongside the true ones — but once a
+  correction is active, the sensors *are* corrected, so a sample transcribed from
+  them measured the leftover error and stacked it onto the correction already in
+  force. Each sample was therefore affected by every sample before it.
+
+  The form now asks only for the external meter readings and takes the device's
+  figures straight from the raw registers, so samples are independent of the fit
+  they feed. Demonstrated with the real measurement: a sample copied from a
+  corrected sensor produced a +66 W correction and a 424 W reading against a true
+  490 W — worse than no correction at all — where reading the register gives +132 W
+  and 490 W.
+
+### Added
+- **Samples can be reviewed and removed individually.** The options flow lists each
+  one with its raw and true values, its error, and its residual against the current
+  fit, so a sample taken while the load moved stands out and can be dropped without
+  clearing the whole set. Previously the only options were adding and clearing all.
+- **The uncorrected figure is exposed as an attribute** on the two corrected
+  sensors, `reported_by_device` alongside `correction_applied`, so what the device
+  actually said stays visible and the correction can be checked rather than taken on
+  trust.
+- **A sample is refused unless the device is charging**, that being the only state
+  in which the error appears. One taken in pass-through would anchor the fit at zero
+  and flatten it.
+
 ## [0.5.0] - 2026-08-12
 
 An options flow, and with it calibration for a device defect found by measuring

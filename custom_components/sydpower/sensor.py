@@ -42,18 +42,18 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from sydpower.catalog import state_word
 
-from .const import DOMAIN, INPUT_SCHEDULED_CHARGE_COUNTDOWN, STATE_AC_BIT
+from .const import (
+    DOMAIN,
+    INPUT_SCHEDULED_CHARGE_COUNTDOWN,
+    REG_CHARGE_POWER,
+    STATE_AC_BIT,
+)
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
 
 
 # Register 41 is the state word's high half, so its AC bit sits 16 places up.
 AC_OUTPUT_STATE_BIT = 16 + STATE_AC_BIT.bit_length() - 1
-
-# Charge power, which gates the output correction: the under-report has only been
-# observed while charging, and in pass-through the output figure was accurate.
-REG_CHARGE_POWER = 3
-
 
 # Firmware versions, from the holding bank. The app posts exactly these four
 # registers to its backend under these names (app-service.js, the MCU_version
@@ -316,6 +316,27 @@ class SydpowerSensor(SydpowerEntity, SensorEntity):
             # Raw watts and minutes stay integers rather than gaining a ".0".
             return value
         return round(value / divisor + correction, 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, float] | None:
+        """
+        Expose the uncorrected reading whenever a correction is being applied.
+
+        Without this the raw figure would be invisible once calibrated, leaving no
+        way to see what the device actually said or to check the correction. The
+        options flow reads the registers directly rather than these attributes, so
+        this is for inspection rather than for feeding the fit.
+        """
+        correction = self._correction()
+        if not correction:
+            return None
+        raw = self._input(self.entity_description.register)
+        if raw is None:
+            return None
+        return {
+            "reported_by_device": round(raw / self.entity_description.divisor, 2),
+            "correction_applied": round(correction, 2),
+        }
 
     def _correction(self) -> float:
         """

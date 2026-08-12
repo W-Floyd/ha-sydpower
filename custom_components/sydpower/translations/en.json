@@ -31,18 +31,27 @@
       },
       "add_sample": {
         "title": "Add a calibration sample",
-        "description": "Read these at one moment, with the device charging — the error does not appear otherwise. {count} sample(s) recorded so far.\n\nGive the reported charge power, then at least one true/reported pair. Supplying both the true input and true output also derives the true charge power, which checks the device's own charge reading.\n\n*True input* is a plug meter at the wall socket. *True output* is what the load itself reports. The reported values are this integration's Input power, Output power and Charge power sensors.",
+        "description": "Enter what your **external meters** say right now. The device's own readings are taken from the current poll — you do not type them, because once a calibration is active the sensors are corrected and a sample copied from them would measure the leftover error and stack it on the correction already applied.\n\nThis poll reports **{charge} W** charging, **{out} W** out, **{in} W** in (raw registers, uncorrected). {count} sample(s) recorded so far.\n\nThe device must be charging — the error does not appear otherwise. Give at least one figure; both also derives the true charge power, which checks the device's own charge reading.\n\nFor a second sample that resolves whether the error scales, change the AC charging power setting first so the charge rate differs.",
         "data": {
-          "charge_reported": "Charge power, reported (W)",
-          "out_reported": "Output power, reported (W)",
-          "out_true": "Output power, true (W)",
-          "in_reported": "Input power, reported (W)",
+          "out_true": "Output power, true — what the load reports (W)",
           "in_true": "Input power, true — wall meter (W)"
+        }
+      },
+      "review_samples": {
+        "title": "Calibration samples",
+        "description": "**Current fit:** {fit}\n\nEach sample shows the raw register value, the true value from your meter, the error between them, and the residual — how far that sample sits from the fitted line. A large residual means that sample disagrees with the others, so it was probably taken while something moved.\n\nSelect any to remove. Leave everything unselected to keep them all.",
+        "data": {
+          "remove": "Remove these samples"
         }
       }
     },
     "error": {
-      "sample_needs_a_pair": "A sample needs a true and reported value for the output, the input, or both — otherwise there is no error to measure."
+      "sample_needs_a_pair": "A sample needs a true and reported value for the output, the input, or both — otherwise there is no error to measure.",
+      "sample_needs_charging": "The device is not charging, and the error only appears while it is. Raise the charge ceiling above the current battery level and try again."
+    },
+    "abort": {
+      "no_data": "The device has not been polled yet, so there are no readings to pair with. Try again once it is connected.",
+      "no_samples": "No calibration samples have been recorded yet."
     }
   }
 }
