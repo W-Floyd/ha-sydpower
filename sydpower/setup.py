@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from setuptools import setup
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 setup(
     name="sydpower",
