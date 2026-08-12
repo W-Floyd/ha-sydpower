@@ -418,13 +418,24 @@ class TestWriteSafety:
         dev._check_writes_safe(67, [high])
 
     def test_multi_register_span_checks_every_register(self):
-        """A consecutive write is rejected if any register in the span is unsafe."""
-        # Registers 66 and 67 are both writable; 68 is not. Starting at 66 with
-        # three values reaches 68 and must be refused.
+        """
+        A consecutive write is rejected if any register in the span is unsafe.
+
+        The boundary is derived rather than hardcoded: this test previously used
+        66/67 as writable and 68 as not, and silently stopped testing anything
+        when 68 was added to the allowlist.
+        """
         dev = self._device()
-        dev._check_writes_safe(66, [100, 900])
-        with pytest.raises(UnsafeRegisterWriteError, match="Register 68"):
-            dev._check_writes_safe(66, [100, 900, 1])
+        start = next(
+            r
+            for r in sorted(WRITABLE_HOLDING_REGISTERS)
+            if r + 1 not in WRITABLE_HOLDING_REGISTERS
+        )
+        low, _high = WRITABLE_HOLDING_REGISTERS[start]
+
+        dev._check_writes_safe(start, [low])  # the writable register alone is fine
+        with pytest.raises(UnsafeRegisterWriteError, match=f"Register {start + 1}"):
+            dev._check_writes_safe(start, [low, 0])
 
     def test_multi_register_span_checks_each_value(self):
         """Each value is validated against its own register's range."""
