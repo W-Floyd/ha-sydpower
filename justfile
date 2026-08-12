@@ -74,6 +74,34 @@ check:
     print(f"all version references agree: {version}")
     PY
 
+# Verify the manifest's bluetooth matchers still match the product catalog.
+check-matchers:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    {{python}} - <<'PY'
+    import json, sys
+
+    catalog = json.load(open("{{justfile_directory()}}/sydpower/product_catalog.json"))
+    manifest = json.load(open("{{justfile_directory()}}/{{manifest}}"))
+
+    # Home Assistant matches on advertised service UUIDs, and each product key is
+    # "<SERVICE_UUID>_<NAME>", so the two must agree exactly. When they drifted
+    # last time, 18 products silently became undiscoverable.
+    expected = sorted({k.split("_", 1)[0].upper() for k in catalog["products"]})
+    actual = [b["service_uuid"].upper() for b in manifest.get("bluetooth", [])]
+
+    missing = sorted(set(expected) - set(actual))
+    extra = sorted(set(actual) - set(expected))
+    if missing or extra:
+        if missing:
+            print(f"  {len(missing)} catalog UUID(s) have no matcher, e.g. {missing[:3]}", file=sys.stderr)
+        if extra:
+            print(f"  {len(extra)} matcher(s) not in the catalog, e.g. {extra[:3]}", file=sys.stderr)
+        print("  regenerate with: cd analysis && python extract_catalog.py --stage build", file=sys.stderr)
+        sys.exit(1)
+    print(f"manifest matchers agree with the catalog ({len(expected)} products)")
+    PY
+
 # Bump the version. LEVEL is patch, minor or major.
 bump level="patch":
     #!/usr/bin/env bash
@@ -177,7 +205,7 @@ build: test
     ls -1 dist
 
 # Commit, tag and push the current version. CI builds and attaches the wheel.
-release: check test
+release: check check-matchers test
     #!/usr/bin/env bash
     set -euo pipefail
     version=$(just version)

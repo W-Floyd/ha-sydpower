@@ -422,6 +422,44 @@ def build_catalog(payloads: dict[str, Any], locale: str, config: dict[str, str])
     return catalog
 
 
+# ── 6. manifest matchers ──────────────────────────────────────────────────────
+
+
+def update_manifest(catalog: dict[str, Any], manifest_path: Path) -> bool:
+    """
+    Regenerate the integration manifest's `bluetooth` matchers from the catalog.
+
+    Home Assistant matches on *advertised* service UUIDs, and every product key
+    is `<SERVICE_UUID>_<NAME>`, so the matcher list is mechanically derivable.
+    Hand-maintaining it meant the list silently lagged the catalog: a refresh from
+    151 to 169 products left 18 devices undiscoverable.
+
+    Only the `bluetooth` block is touched; every other field keeps its value and
+    position. Returns True if the file changed.
+    """
+    if not manifest_path.exists():
+        log("manifest", f"skipped, no such file: {manifest_path}")
+        return False
+
+    manifest = json.loads(manifest_path.read_text())
+    uuids = sorted({key.split("_", 1)[0].upper() for key in catalog["products"]})
+    matchers = [{"service_uuid": u, "connectable": True} for u in uuids]
+
+    before = manifest.get("bluetooth", [])
+    if before == matchers:
+        log("manifest", f"{len(matchers)} matchers already current")
+        return False
+
+    manifest["bluetooth"] = matchers
+    manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
+    log(
+        "manifest",
+        f"{len(before)} -> {len(matchers)} matchers "
+        f"({len(matchers) - len(before):+d})",
+    )
+    return True
+
+
 def main() -> int:
     here = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(
@@ -443,6 +481,15 @@ def main() -> int:
         choices=("unpack", "beautify", "config", "fetch", "build"),
         default="build",
         help="stop after this stage (default: build, the whole pipeline)",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=here.parent / "custom_components" / "sydpower" / "manifest.json",
+        help="integration manifest whose bluetooth matchers are regenerated",
+    )
+    parser.add_argument(
+        "--no-manifest", action="store_true", help="leave the manifest untouched"
     )
     parser.add_argument("--clean", action="store_true", help="remove the workdir first")
     args = parser.parse_args()
@@ -487,6 +534,9 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(slim, ensure_ascii=False, indent=1) + "\n")
     log("done", f"wrote {args.out} ({args.out.stat().st_size // 1024} KB), products + categories")
+
+    if not args.no_manifest:
+        update_manifest(catalog, args.manifest)
     return 0
 
 

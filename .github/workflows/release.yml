@@ -78,6 +78,27 @@ jobs:
           sys.exit(1 if errors else 0)
           PY
 
+      - name: Verify the manifest's bluetooth matchers match the catalog
+        run: |
+          python - <<'PY'
+          import json, sys
+
+          catalog = json.load(open("sydpower/product_catalog.json"))
+          manifest = json.load(open("custom_components/sydpower/manifest.json"))
+
+          # Home Assistant matches on advertised service UUIDs, and every product
+          # key is "<SERVICE_UUID>_<NAME>", so these must agree. They drifted once
+          # and 18 products silently became undiscoverable.
+          expected = {k.split("_", 1)[0].upper() for k in catalog["products"]}
+          actual = {b["service_uuid"].upper() for b in manifest.get("bluetooth", [])}
+          if expected != actual:
+              missing, extra = sorted(expected - actual), sorted(actual - expected)
+              print(f"::error::matchers out of sync: {len(missing)} missing, {len(extra)} extra")
+              print(f"missing: {missing[:5]}\nextra: {extra[:5]}")
+              sys.exit(1)
+          print(f"matchers agree with the catalog ({len(expected)} products)")
+          PY
+
       - name: Verify the wheel installs and imports
         working-directory: sydpower
         run: |
