@@ -36,7 +36,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, INPUT_SCHEDULED_CHARGE_COUNTDOWN
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
 
@@ -136,6 +136,17 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfPower.WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
+        # The countdown the app polls to confirm a schedule took effect. Zero when
+        # no charge is scheduled.
+        key="scheduled_charge_countdown",
+        name="Scheduled charge in",
+        register=INPUT_SCHEDULED_CHARGE_COUNTDOWN,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
     SydpowerSensorDescription(
         key="time_to_full",

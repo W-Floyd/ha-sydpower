@@ -96,4 +96,10 @@ WRITABLE_HOLDING_REGISTERS: dict[int, tuple[int, int]] = {
     61: (0, 1440),   # DC no-load standby, 0-24 h stored x60
     62: (180, 1800), # Screen rest time, 3-30 min stored x60
     68: (5, 480),    # Whole machine unused time, minutes (raw)
+    # Scheduled charging delay in minutes, up to a full day; 0 cancels. The app
+    # derives it from a requested time of day, so 1440 is its ceiling.
+    63: (0, 1440),
+    # Remote shutdown. Only 1 is meaningful and the app writes nothing else, so
+    # the range is exactly that one value — this powers the unit down.
+    64: (1, 1),
 }

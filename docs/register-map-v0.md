@@ -239,15 +239,30 @@ Full connect → read both banks → disconnect cycles, measured over 5 runs on 
 local macOS adapter: **median 2.99 s, max 3.71 s, 5/5 successful**. At a 30 s
 poll interval that is roughly a 10% duty cycle.
 
-## Known but not implemented
+## Scheduled charging and remote shutdown
 
-| Register | Function | Evidence |
+| Register | Bank | Function |
 | --- | --- | --- |
-| 63 | SOC calibration trigger | App writes 0, then polls input registers for 15 s under a `soc-setting` label |
-| 64 | Remote shutdown | App writes 1 behind a confirmation modal, labelled `device.remote-shutdown` |
+| 63 | holding | Minutes until scheduled charging starts; **0 cancels** |
+| 57 | input | Countdown remaining, in minutes; 0 when nothing is scheduled |
+| 64 | holding | Remote shutdown, written as 1 — **powers the unit down** |
 
-Both are momentary actions rather than states, so they belong as button entities.
-Neither is exposed, and register 64 in particular powers the unit down.
+The app's booking page derives the delay from a requested time of day, wrapping
+midnight, then polls the countdown until it matches:
+
+```js
+a = 60 * hours + minutes
+delay = a > now ? a - now : 1440 - now + a
+write holding[63] = delay        // then wait for input[57] == delay
+```
+
+An earlier revision of this document called register 63 a state-of-charge
+calibration. That was wrong, read from a reused `soc-setting-1` sleep label on the
+page; the page is `booking-charging`.
+
+Cancelling a schedule and remote shutdown are exposed as buttons. Setting a
+schedule is not: a delay in minutes derived from a wall-clock time suits a service
+or datetime entity rather than any of the platforms here.
 
 The app also **refuses to enable an output** when the average pack state of charge
 is below the discharge floor in holding 66, showing `device.tip-1` instead. It

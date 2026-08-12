@@ -925,3 +925,42 @@ class TestControllableStates:
         assert registers <= set(WRITABLE_HOLDING_REGISTERS), sorted(
             registers - set(WRITABLE_HOLDING_REGISTERS)
         )
+
+
+class TestActionRegisters:
+    """
+    Test the allowlist entries for the two momentary actions.
+
+    Both are absent from the catalog and were traced in the app: holding 63 is the
+    scheduled-charging delay in minutes, where 0 cancels, and holding 64 powers the
+    unit down when written as 1.
+    """
+
+    def _device(self):
+        return SydpowerDevice("AA:BB:CC:DD:EE:FF")
+
+    def test_scheduled_charge_accepts_a_full_day_and_zero(self):
+        from sydpower.constants import WRITABLE_HOLDING_REGISTERS
+
+        assert WRITABLE_HOLDING_REGISTERS[63] == (0, 1440)
+        device = self._device()
+        device._check_writes_safe(63, [0])  # cancel
+        device._check_writes_safe(63, [1440])  # the app's ceiling
+
+    def test_scheduled_charge_rejects_more_than_a_day(self):
+        with pytest.raises(UnsafeRegisterWriteError, match="outside the verified range"):
+            self._device()._check_writes_safe(63, [1441])
+
+    def test_shutdown_permits_only_the_value_the_app_writes(self):
+        """
+        The range is exactly one value, because this powers the unit down.
+
+        Anything else is a mistake rather than a different shutdown mode.
+        """
+        from sydpower.constants import WRITABLE_HOLDING_REGISTERS
+
+        assert WRITABLE_HOLDING_REGISTERS[64] == (1, 1)
+        self._device()._check_writes_safe(64, [1])
+        for value in (0, 2):
+            with pytest.raises(UnsafeRegisterWriteError):
+                self._device()._check_writes_safe(64, [value])

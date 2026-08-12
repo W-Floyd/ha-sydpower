@@ -36,6 +36,15 @@ REG_THRESHOLD_CHARGE = 67
 REG_KEY_SOUND = 56
 REG_AC_SILENT_CONTROL = 57
 
+# Scheduled charging: holding 63 holds the delay in minutes until charging starts,
+# and writing 0 cancels it. The app computes the delay from a requested time of day,
+# wrapping midnight, then polls input 57 — the countdown — until it matches.
+REG_SCHEDULED_CHARGE = 63
+INPUT_SCHEDULED_CHARGE_COUNTDOWN = 57
+
+# Powers the unit down. The app writes 1 behind a confirmation modal.
+REG_REMOTE_SHUTDOWN = 64
+
 # ── Output state bits in input register 41 ────────────────────────────────────
 # Confirmed empirically by toggling each output in isolation.
 STATE_REGISTER = 41
