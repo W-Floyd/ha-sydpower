@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.bluetooth import async_ble_device_from_address
+from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -22,14 +22,22 @@ from .coordinator import SydpowerCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.BINARY_SENSOR]
+PLATFORMS = [Platform.BINARY_SENSOR, Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Sydpower from a config entry."""
     address: str = entry.data[CONF_ADDRESS]
 
-    if not async_ble_device_from_address(hass, address, connectable=True):
+    # Distinguish "no Bluetooth at all" from "this device is out of range" — the
+    # two need very different things from the user.
+    if not bluetooth.async_scanner_count(hass, connectable=True):
+        raise ConfigEntryNotReady(
+            "No connectable Bluetooth adapter or ESPHome Bluetooth proxy is "
+            "available; Sydpower devices require an active connection."
+        )
+
+    if not bluetooth.async_ble_device_from_address(hass, address, connectable=True):
         raise ConfigEntryNotReady(
             f"Sydpower device {address} not reachable; ensure it is powered on and in range."
         )
@@ -44,8 +52,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
 
-    # async_start() registers BT callbacks and returns a cancel callable.
-    entry.async_on_unload(coordinator.async_start())
+    # Fail setup (and retry later) if the very first poll cannot complete, so
+    # entities are never created against a device we have never read.
+    await coordinator.async_config_entry_first_refresh()
+
     entry.async_on_unload(entry.add_update_listener(async_update_listener))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

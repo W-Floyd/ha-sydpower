@@ -5,9 +5,6 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from homeassistant.components.bluetooth.passive_update_coordinator import (
-    PassiveBluetoothCoordinatorEntity,
-)
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -19,6 +16,7 @@ from homeassistant.const import UnitOfEnergy, UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .catalog import get_product_features
 from .const import (
@@ -179,7 +177,7 @@ async def async_setup_entry(
     )
 
 
-class SydpowerSensor(PassiveBluetoothCoordinatorEntity, SensorEntity):
+class SydpowerSensor(CoordinatorEntity[SydpowerCoordinator], SensorEntity):
     """A sensor reading multiple register indices from the Sydpower coordinator."""
 
     entity_description: SydpowerSensorDescription

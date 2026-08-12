@@ -10,13 +10,11 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.components.bluetooth.passive_update_coordinator import (
-    PassiveBluetoothCoordinatorEntity,
-)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .catalog import get_product_features
 from .const import (
@@ -120,7 +118,7 @@ async def async_setup_entry(
     )
 
 
-class SydpowerBinarySensor(PassiveBluetoothCoordinatorEntity, BinarySensorEntity):
+class SydpowerBinarySensor(CoordinatorEntity[SydpowerCoordinator], BinarySensorEntity):
     """A binary sensor reading one register index from the Sydpower coordinator."""
 
     entity_description: SydpowerBinarySensorDescription

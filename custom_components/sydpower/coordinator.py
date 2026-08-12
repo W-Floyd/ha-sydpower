@@ -2,35 +2,31 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
 
+from bleak.backends.device import BLEDevice
+from bleak.exc import BleakError
 from bleak_retry_connector import BleakClientWithServiceCache, establish_connection
 
-from homeassistant.components.bluetooth import (
-    BluetoothScanningMode,
-    BluetoothServiceInfoBleak,
-)
-from homeassistant.components.bluetooth.active_update_coordinator import (
-    ActiveBluetoothDataUpdateCoordinator,
-)
-from homeassistant.core import CoreState, HomeAssistant, callback
+from homeassistant.components import bluetooth
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from sydpower.constants import BLE_NOTIFY_CHAR_UUID, BLE_WRITE_CHAR_UUID, MTU_SETTLE_DELAY
-from sydpower.exceptions import CommandTimeoutError, SydpowerError
-from sydpower.protocol import (
-    RegisterResponse,
-    ResponseBuffer,
-    WriteResponse,
-    build_read_holding_registers,
-    build_read_input_registers,
-)
+from sydpower import SydpowerDevice
+from sydpower.exceptions import SydpowerError
 
 from .const import POLL_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
+
+# Reachability diagnostics landed in a recent Home Assistant core release.  The
+# integration must still load on older versions, so degrade gracefully.
+try:
+    from homeassistant.components.bluetooth import BluetoothReachabilityIntent
+except ImportError:  # pragma: no cover - depends on HA core version
+    BluetoothReachabilityIntent = None
 
 
 @dataclass
@@ -41,13 +37,24 @@ class SydpowerData:
     input: list[int]
 
 
-class SydpowerCoordinator(ActiveBluetoothDataUpdateCoordinator[SydpowerData]):
+class SydpowerCoordinator(DataUpdateCoordinator[SydpowerData]):
     """
-    Combines passive BLE advertisement monitoring with periodic active polling.
+    Polls a Sydpower device over BLE on a fixed interval.
 
-    On each poll cycle the coordinator opens a fresh BLE connection via
-    bleak-retry-connector, reads holding and input register banks, then closes
-    the connection.  Sensors derive their values from ``coordinator.data``.
+    This is a plain ``DataUpdateCoordinator`` rather than one of the Bluetooth
+    coordinators on purpose.  Sydpower advertisements carry only identity data
+    (MAC, init status, serial) and no telemetry, and every sensor value comes
+    from a GATT register read.  The Bluetooth coordinators are advertisement
+    driven, and Home Assistant deduplicates advertisements whose payload is
+    byte-identical to the previous one — so with a static payload like this one
+    the poll trigger goes silent after the first packet.  A timer-driven
+    coordinator is both correct per the Home Assistant developer docs and
+    immune to that.
+
+    Each cycle resolves a *connectable* ``BLEDevice`` for the address, which is
+    what allows polling through an ESPHome Bluetooth proxy rather than only a
+    local adapter, then opens a connection, reads both register banks, and
+    closes it again.
     """
 
     def __init__(
@@ -60,112 +67,75 @@ class SydpowerCoordinator(ActiveBluetoothDataUpdateCoordinator[SydpowerData]):
         protocol_version: int,
     ) -> None:
         super().__init__(
-            hass=hass,
-            logger=_LOGGER,
-            address=address,
-            needs_poll_method=self._needs_poll,
-            poll_method=self._async_poll_device,
-            mode=BluetoothScanningMode.ACTIVE,
-            connectable=True,
+            hass,
+            _LOGGER,
+            name=f"Sydpower {name}",
+            update_interval=timedelta(seconds=POLL_INTERVAL),
         )
+        self.address = address
         self._device_name = name
         self._modbus_address = modbus_address
         self._modbus_count = modbus_count
         self._protocol_version = protocol_version
-        self._poll_interval = timedelta(seconds=POLL_INTERVAL)
-        self._ready = asyncio.Event()
 
-    # ── ActiveBluetoothDataUpdateCoordinator hooks ────────────────────────────
+    # ── Polling ───────────────────────────────────────────────────────────────
 
-    @callback
-    def _needs_poll(
-        self,
-        service_info: BluetoothServiceInfoBleak,
-        last_poll: float | None,
-    ) -> bool:
-        """Poll on first advertisement and then once every POLL_INTERVAL seconds."""
-        if last_poll is None:
-            return True
-        return last_poll >= POLL_INTERVAL
+    async def _async_update_data(self) -> SydpowerData:
+        """Read both register banks, raising ``UpdateFailed`` on any error."""
+        ble_device = self._connectable_device()
 
-    async def _async_poll_device(
-        self, service_info: BluetoothServiceInfoBleak
-    ) -> SydpowerData:
-        """
-        Open a BLE connection, read both register banks, and return the data.
-
-        Called by the coordinator framework from a background task.
-        """
-        ble_device = service_info.device
-        _LOGGER.debug("Polling %s (%s)", self._device_name, ble_device.address)
-
-        client = await establish_connection(
-            BleakClientWithServiceCache,
+        device = SydpowerDevice(
             ble_device,
-            ble_device.address,
-            max_attempts=3,
+            modbus_address=self._modbus_address,
+            modbus_count=self._modbus_count,
+            protocol_version=self._protocol_version,
+            client_factory=lambda: establish_connection(
+                BleakClientWithServiceCache,
+                ble_device,
+                ble_device.address,
+                max_attempts=3,
+            ),
         )
-        try:
-            await asyncio.sleep(MTU_SETTLE_DELAY)
-            holding = await self._read_registers(client, func_code=0x03)
-            input_regs = await self._read_registers(client, func_code=0x04)
-        finally:
-            await client.disconnect()
 
-        self._ready.set()
+        try:
+            async with device:
+                holding = await device.read_holding_registers()
+                input_regs = await device.read_input_registers()
+        except (SydpowerError, BleakError, TimeoutError) as err:
+            raise UpdateFailed(f"{self._device_name}: {err}") from err
+
         return SydpowerData(holding=holding, input=input_regs)
 
-    # ── Register I/O ──────────────────────────────────────────────────────────
+    def _connectable_device(self) -> BLEDevice:
+        """
+        Resolve a connectable ``BLEDevice`` for this address.
 
-    async def _read_registers(
-        self, client: BleakClientWithServiceCache, func_code: int
-    ) -> list[int]:
-        """Read a full register bank (holding=0x03 or input=0x04) over BLE."""
-        if func_code == 0x03:
-            packet = build_read_holding_registers(
-                self._modbus_address, 0, self._modbus_count
-            )
-        else:
-            packet = build_read_input_registers(
-                self._modbus_address, 0, self._modbus_count
-            )
-
-        buf = ResponseBuffer(
-            modbus_address=self._modbus_address,
-            expected_func_code=func_code,
-            protocol_version=self._protocol_version,
+        Raises ``UpdateFailed`` with Home Assistant's reachability diagnostics
+        when no adapter or proxy can reach the device — that string reports
+        which scanners see it, their RSSI and connection-slot allocation, and
+        whether every scanner is currently paused because it is busy
+        connecting.
+        """
+        ble_device = bluetooth.async_ble_device_from_address(
+            self.hass, self.address, connectable=True
         )
-        future: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        if ble_device is not None:
+            return ble_device
 
-        def _on_notify(_char, data: bytearray) -> None:
-            try:
-                if buf.feed(bytes(data)) and not future.done():
-                    future.set_result(None)
-            except Exception as exc:
-                if not future.done():
-                    future.set_exception(exc)
+        raise UpdateFailed(
+            f"No connectable Bluetooth adapter or proxy can reach "
+            f"{self.address}: {self._reachability_reason()}"
+        )
 
-        await client.start_notify(BLE_NOTIFY_CHAR_UUID, _on_notify)
-        try:
-            await client.write_gatt_char(BLE_WRITE_CHAR_UUID, packet, response=True)
-            await asyncio.wait_for(asyncio.shield(future), timeout=5.0)
-        except asyncio.TimeoutError as exc:
-            raise CommandTimeoutError(
-                f"No response from {self._device_name} for FC 0x{func_code:02X}"
-            ) from exc
-        finally:
-            try:
-                await client.stop_notify(BLE_NOTIFY_CHAR_UUID)
-            except Exception:
-                pass
-
-        resp = buf.result()
-        if not isinstance(resp, RegisterResponse):
-            raise SydpowerError(f"Unexpected response type: {type(resp).__name__}")
-        return list(resp.registers)
-
-    # ── Ready gate ────────────────────────────────────────────────────────────
-
-    async def async_wait_ready(self) -> None:
-        """Block until the first successful poll has completed."""
-        await self._ready.wait()
+    def _reachability_reason(self) -> str:
+        """Human-readable explanation of why the address is unreachable."""
+        intent = BluetoothReachabilityIntent
+        if intent is None:
+            return (
+                f"{bluetooth.async_scanner_count(self.hass, connectable=True)} "
+                f"connectable scanner(s) registered"
+            )
+        # Wording is not stable and is for humans only — never parse it.
+        return bluetooth.async_address_reachability_diagnostics(
+            self.hass, self.address, intent.CONNECTION
+        )
