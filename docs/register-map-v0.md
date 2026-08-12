@@ -98,7 +98,7 @@ value][CRC]`, with the device echoing the request frame verbatim.
 | 35 | USB-C port power | ÷10 → W | 196–199 (19.6–19.9 W) with a battery pack charging; matches upstream `REG_USB_C2_OUT` |
 | 41 | Output state bitfield | see below | Each output sets a distinct bit |
 | 56 | State of charge | ÷10 → % | 757 → 753 (75.7% → 75.3%) falling under sustained load |
-| 59 | Remaining runtime | minutes | 3225 → 3217 → 3212 across the session, monotonically decreasing under load. Stable across 25 consecutive samples. Matches upstream |
+| 59 | Remaining discharge runtime | minutes | 3225 → 3217 → 3212 while discharging, monotonically decreasing; stable across 25 consecutive samples; **0 while charging**. Matches upstream. See the power section below |
 
 ### `input[41]` bitfield
 
@@ -134,23 +134,43 @@ Whether 18/21 are input vs output, or two measurement points on the same rail,
 is unresolved — mains was connected and AC output was enabled for most of the
 session, so the two cases were never separated.
 
-### Unresolved: registers 6, 20, 39
+### Power and duration: registers 3, 4, 6, 20, 39, 58
 
-These have an exact, reproducible relationship:
+These are **raw units** — watts and minutes, no divisor. Confirmed by reading the
+device's own display alongside a register dump: the screen showed 628 W input,
+380 W output and 83 minutes to full while registers 6, 39 and 58 held exactly
+628, 380 and 83.
+
+| Register | Function | Unit |
+| --- | --- | --- |
+| 3 | Power into the battery (charging) | W |
+| 4 | DC / solar input power | W — **unverified**, always 0 so far |
+| 6 | Total input power | W |
+| 20 | Byte-identical to 39 in every sample | W |
+| 39 | Output power | W |
+| 58 | Time until full | minutes |
+| 59 | Remaining discharge runtime | minutes — 0 while charging |
+
+The device's accounting is internally consistent, with this identity holding in
+every sample including those taken while not charging:
 
 ```
-input[20] - input[6]  =  0     (identical in every sample)
-input[39] - input[6]  = +19    (constant in every sample)
+input[6] = input[39] + input[3]        613 = 365 + 248
+                                       512 = 512 +   0   (idle, not charging)
 ```
 
-But their absolute values shifted between sessions under the *same* output state
-(USB on, DC on, AC on, light off): 511–523 in one run, 583–591 in another. A
-÷10 pack voltage reading fits the second range against a 16S LiFePO4 pack
-(58.4 V full) but not the first, and state of charge was falling in both. The
-quantity and scale are **not** established — do not expose these as sensors yet.
+Register 4 is the open question. Nothing has ever been connected to the DC/solar
+input, so it is unproven whether solar appears as a fourth term in that identity
+or is folded into register 3. Its number comes from the earlier ESP-FBot
+integration, whose other power indices (3, 6, 20, 39) all proved correct here.
 
-Note that 6 and 20 being byte-identical contradicts an earlier observation that
-they diverged; that observation came from a pre-fix desynced read.
+Note that the absolute figures are reportedly higher than an external meter
+shows. That is the device's own inaccuracy — the registers match its display
+exactly, so there is no scaling error to correct on this side.
+
+An earlier revision of this document guessed 6/20/39 were a ÷10 pack voltage,
+on the strength of their tracking each other and sitting in a plausible range
+for a 16S LiFePO4 pack. That was wrong; the display comparison settled it.
 
 ## Response desynchronisation (fixed)
 
@@ -185,7 +205,8 @@ poll interval that is roughly a 10% duty cycle.
 
 ## Still unmapped
 
-- Quantity and scale for registers 6, 20, 39.
+- Whether DC/solar input appears in register 4, and how it enters the input
+  power identity. Needs a panel or DC source connected.
 - Commanding register 26 (AC output) and register 56 (key sound). Every other
   allowlisted register has now been written successfully and read back.
 - Remaining USB port power registers; upstream lists 34, 36, 37 in addition to

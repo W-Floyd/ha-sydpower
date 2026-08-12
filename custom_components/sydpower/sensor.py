@@ -86,6 +86,50 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
     ),
     SydpowerSensorDescription(
+        key="input_power",
+        name="Input power",
+        register=6,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
+        key="output_power",
+        name="Output power",
+        register=39,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
+        key="charge_power",
+        name="Charge power",
+        register=3,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
+        # Unverified: has read 0 in every sample, consistent with nothing
+        # connected to the DC/solar input. The register number comes from the
+        # earlier ESP-FBot integration, whose other power indices proved correct
+        # on this device.
+        key="dc_input_power",
+        name="DC input power",
+        register=4,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
+        key="time_to_full",
+        name="Time to full",
+        register=58,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        device_class=SensorDeviceClass.DURATION,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    SydpowerSensorDescription(
         key="light_power",
         name="Light power",
         register=15,
@@ -123,13 +167,22 @@ SENSOR_DESCRIPTIONS: tuple[SydpowerSensorDescription, ...] = (
     ),
 )
 
+# Power and duration registers are raw units — watts and minutes, no divisor.
+# Confirmed against the device's own display, which read 628 W in, 380 W out and
+# 83 minutes to full while registers 6, 39 and 58 held 628, 380 and 83. The
+# device's accounting is internally consistent (6 = 20 + 3, so register 3 is the
+# power going into the battery) but its absolute figures are reportedly higher
+# than an external meter shows, which is the device's inaccuracy, not a scaling
+# error here.
+#
 # Deliberately not exposed:
-#   input 6, 20, 39 — a reproducible relationship to each other, but the
-#     quantity and scale are unresolved; absolute values shifted between
-#     sessions under identical output state.
+#   input 20 — byte-identical to register 39 in every sample; publishing both
+#     would be two entities for one measurement.
 #   input 21 — tracks register 18 about 0.3 V lower; whether the pair is AC
 #     input versus output is unresolved, so only one is published.
 #   input 42 — a bitfield, not a wattage, despite its plausible magnitude.
+#   input 19 — constant 600, most likely AC input frequency at a different
+#     scale from register 22; unconfirmed.
 
 
 async def async_setup_entry(
