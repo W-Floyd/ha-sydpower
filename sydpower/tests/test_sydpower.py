@@ -825,3 +825,61 @@ class TestStateWord:
         from sydpower.catalog import get_product_states
 
         assert get_product_states("00000000-0000-0000-0000-000000000000_NOPE") == []
+
+
+class TestOutputChildren:
+    """
+    Test resolving an output's children from the catalog.
+
+    The index's meaning depends on the output: for the light the children are modes
+    and the index is a register value, while for USB they are ports and the index
+    is a bit in the state word. The two collide numerically, which is why the
+    caller has to know which it asked for.
+    """
+
+    KEY = "00004380-0000-1000-8000-00805F9B34FB_POWER-8043"
+    LIGHT_REGISTER = 27
+
+    def test_modes_resolve_with_names_and_values(self):
+        from sydpower.catalog import get_output_children
+
+        modes = get_output_children(self.KEY, self.LIGHT_REGISTER)
+        assert [value for value, _name in modes] == [1, 2, 3]
+        assert all(name for _value, name in modes)
+
+    def test_modes_are_sorted_by_register_value(self):
+        """Order matters: the lowest is used for a plain turn-on."""
+        from sydpower.catalog import get_output_children
+
+        values = [value for value, _name in get_output_children(self.KEY, self.LIGHT_REGISTER)]
+        assert values == sorted(values)
+        assert values[0] == 1, "steady on should be the lowest mode"
+
+    def test_zero_is_not_a_mode(self):
+        """Off is the light's off state, not an effect."""
+        from sydpower.catalog import get_output_children
+
+        assert 0 not in [v for v, _ in get_output_children(self.KEY, self.LIGHT_REGISTER)]
+
+    def test_unknown_product_has_no_modes(self):
+        from sydpower.catalog import get_output_children
+
+        assert get_output_children("00000000-0000-0000-0000-000000000000_NOPE", 27) == []
+
+    def test_usb_children_are_ports_not_modes(self):
+        """
+        The same call against USB returns port bits, not mode values.
+
+        This is the collision that makes the caller responsible for knowing which
+        kind of child it asked for: the light's modes are 1, 2 and 3, while USB's
+        ports include 3 and 4.
+        """
+        from sydpower.catalog import get_output_children
+
+        ports = get_output_children(self.KEY, 24)
+        assert [index for index, _name in ports] == [3, 4, 6, 7, 8, 9]
+
+    def test_unknown_register_has_no_children(self):
+        from sydpower.catalog import get_output_children
+
+        assert get_output_children(self.KEY, 99) == []

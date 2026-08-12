@@ -129,7 +129,13 @@ outputs, six USB ports, three DC ports and the AC child — every one agreeing w
 the toggle behaviour observed on hardware.
 
 The light's mode children are the exception: their indices (1, 2, 3) are register
-27 *values*, not word bits, and collide with USB port bits.
+27 *values*, not word bits, and collide with USB port bits. The catalog cannot
+express which kind a child is, so the caller has to know — the integration reads
+the light's children as values and every other output's as bits.
+
+Because register 27 holds a mode rather than a boolean, the light is exposed as a
+Home Assistant light entity with its modes as effects — "Always On", "SOS Mode"
+and "Flash Mode", named by the catalog — rather than a switch plus a select.
 
 ### AC voltage and frequency
 

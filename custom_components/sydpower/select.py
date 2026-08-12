@@ -11,8 +11,8 @@ value multiplied by 60 — and those live in the library's ``SETTING_ENCODINGS``
 Applying the wrong one writes a plausible but incorrect value to a persisted
 settings register, so the encoding is looked up explicitly rather than assumed.
 
-The light mode select stays hardcoded: it is a state register, not a catalog
-setting, so the catalog has nothing to say about it.
+The light is not here. It holds a mode rather than one of a list of settings, so
+it is a light entity with its modes as effects — see light.py.
 """
 
 from __future__ import annotations
@@ -38,13 +38,7 @@ from sydpower.constants import (
     setting_encoding,
 )
 
-from .const import (
-    CONF_NAME,
-    CONF_PRODUCT_KEY,
-    DOMAIN,
-    LIGHT_MODES,
-    REG_LIGHT_CONTROL,
-)
+from .const import CONF_NAME, CONF_PRODUCT_KEY, DOMAIN
 from .coordinator import SydpowerCoordinator
 from .entity import SydpowerEntity
 
@@ -146,17 +140,6 @@ def _catalog_descriptions(
     return descriptions
 
 
-def _light_mode_description() -> SydpowerSelectDescription:
-    """The light mode select, which the catalog does not describe."""
-    return SydpowerSelectDescription(
-        key="light_mode",
-        name="Light mode",
-        register=REG_LIGHT_CONTROL,
-        values=tuple(range(len(LIGHT_MODES))),
-        choices=tuple(LIGHT_MODES),
-    )
-
-
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -174,10 +157,9 @@ async def async_setup_entry(
         if data is not None and PANEL_VERSION_REGISTER < len(data.holding)
         else None
     )
-    descriptions = [
-        _light_mode_description(),
-        *_catalog_descriptions(product_key, entry.data.get(CONF_NAME, ""), panel_version),
-    ]
+    descriptions = _catalog_descriptions(
+        product_key, entry.data.get(CONF_NAME, ""), panel_version
+    )
     _LOGGER.debug("Adding %d select(s) for %s", len(descriptions), product_key)
     async_add_entities(
         SydpowerSelect(coordinator, entry, desc) for desc in descriptions

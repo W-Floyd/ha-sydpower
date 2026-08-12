@@ -16,7 +16,6 @@ from .const import (
     REG_AC_SILENT_CONTROL,
     REG_DC_CONTROL,
     REG_KEY_SOUND,
-    REG_LIGHT_CONTROL,
     REG_USB_CONTROL,
 )
 from .coordinator import SydpowerCoordinator
@@ -32,6 +31,9 @@ class SydpowerSwitchDescription(SwitchEntityDescription):
     register: int
 
 
+# The light is deliberately absent: it holds a mode rather than a boolean, so it
+# is a light entity with effects (see light.py) instead of a switch plus a select.
+#
 # State is read back from the same holding register that is written, so the
 # entity can never disagree with what was commanded. Input register 41 also
 # carries live output bits (see const.STATE_*), but the control register is the
@@ -40,7 +42,6 @@ SWITCH_DESCRIPTIONS: tuple[SydpowerSwitchDescription, ...] = (
     SydpowerSwitchDescription(key="usb", name="USB", register=REG_USB_CONTROL),
     SydpowerSwitchDescription(key="dc", name="DC", register=REG_DC_CONTROL),
     SydpowerSwitchDescription(key="ac", name="AC", register=REG_AC_CONTROL),
-    SydpowerSwitchDescription(key="light", name="Light", register=REG_LIGHT_CONTROL),
     SydpowerSwitchDescription(
         key="ac_silent", name="AC silent charging", register=REG_AC_SILENT_CONTROL
     ),
@@ -85,8 +86,9 @@ class SydpowerSwitch(SydpowerEntity, SwitchEntity):
 
     @property
     def is_on(self) -> bool | None:
-        # The light register is multi-valued (0-3 selects a mode), so any
-        # non-zero value counts as on.
+        # Non-zero rather than == 1: these registers are booleans in practice,
+        # but treating any non-zero value as on avoids reporting "off" if a
+        # device ever reports something unexpected.
         value = self._holding(self.entity_description.register)
         return None if value is None else value != 0
 

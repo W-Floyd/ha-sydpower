@@ -203,6 +203,42 @@ def gated_setting_options(
     return options
 
 
+def get_output_children(product_key: str, control_register: int) -> list[tuple[int, str]]:
+    """
+    Return ``(input_index, name)`` for the children of the output controlled by
+    *control_register*, sorted by index.
+
+    What the index *means* depends on the output, and the caller must know which:
+
+    * For most outputs the children are ports and the index is a bit in
+      :func:`state_word` — the six USB ports of register 24, for instance.
+    * For the light the children are its modes, and the index is the value written
+      to its control register: 1, 2 and 3 for steady, SOS and flashing. These
+      collide numerically with the USB port bits, which is exactly why the
+      distinction cannot be inferred from the catalog alone.
+
+    Returns an empty list when the catalog does not describe the product or the
+    register names no output.
+    """
+    states = get_product_states(product_key)
+    parent = next(
+        (
+            s
+            for s in states
+            if s.get("holding_index") == control_register and not s.get("parent_id")
+        ),
+        None,
+    )
+    if parent is None:
+        return []
+    children = [
+        (s["input_index"], s.get("function_name") or f"Child {s['input_index']}")
+        for s in states
+        if s.get("parent_id") == parent.get("id") and s.get("input_index") is not None
+    ]
+    return sorted(children)
+
+
 def get_faults() -> list[dict]:
     """
     Return the fault group definitions: name, input registers, and named bits.
